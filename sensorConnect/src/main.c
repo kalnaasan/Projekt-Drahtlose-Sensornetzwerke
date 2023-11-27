@@ -4,27 +4,16 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/sys/printk.h>
 
-#define SLEEP_TIME_MS 2000
+#include "scd4x_i2c.h"
+#include "sensirion_common.h"
+#include "sensirion_i2c_hal.h"
 
-#define SCD41_I2C_ADDRESS	98
-#define SCD41_I2C_START_PERIODIC_MEASUREMENT	0x21B1
+#define SLEEP_TIME_MS 1000
+
 
 
 #define I2C_NODE		DT_NODELABEL(i2c0)
 static const struct device *i2c_dev = DEVICE_DT_GET(I2C_NODE);
-
-static uint8_t i2c_buffer[9];
-static uint16_t offset;
-
-uint16_t sensirion_i2c_add_command_to_bufferMy(uint8_t* buffer, uint16_t offset,
-                                             uint16_t command) {
-    buffer[offset++] = (uint8_t)((command & 0xFF00) >> 8);
-    buffer[offset++] = (uint8_t)((command & 0x00FF) >> 0);
-    return offset;
-}
-void clear_buffer(uint8_t* buffer) {
-	for(int i = 0; i < 9; i++) buffer[i] = 0;
-}
 
 void printErr(int err, char* errType, uint8_t* buffer) {
 	printk("ERR = %d |\t Type: %s, Buffer = [%d, %d] -> HEX %#2x%2x\n", err, errType, buffer[0], buffer[1], buffer[0], buffer[1]);
@@ -33,122 +22,162 @@ void printSuc(char* errType, uint8_t* buffer) {
 	printk("Command-> %s |\t Buffer = [%d, %d] -> HEX %#2x%2x\n", errType, buffer[0], buffer[1], buffer[0], buffer[1]);
 }
 
+void clean_up_sensor_states(int16_t* error) {
+	// SCD41
+	scd4x_wake_up();
+	scd4x_stop_periodic_measurement();
+	scd4x_reinit();
+	// SVM41
+	error = svm41_device_reset();
+    if (error) {
+        printk("Error executing svm41_device_reset(): %i\n", error);
+    }
+	// SGP41 - NOT NEEDED?
+}
+
+void self_test_sensors(int16_t* error) {
+
+	uint16_t test_result;
+
+	error = sgp41_execute_self_test(&test_result);
+    if (error) {
+        printk("Error executing sgp41_execute_self_test(): %i\n", error);
+    } else {
+        printk("Test result: %u\n", test_result);
+    }
+}
+
+void start_measurement(int16_t* error) {
+	// SCD41
+	error = scd4x_start_periodic_measurement();
+    if (error) {
+        printk("Error executing scd4x_start_periodic_measurement(): %i\n",
+               error);
+    }
+	// SVM41
+	error = svm41_start_measurement();
+    if (error) {
+        printk("Error executing svm41_start_measurement(): %i\n", error);
+    }
+	// SGP41
+		// Parameters for deactivated SCD41_humidity compensation:
+    uint16_t default_rh = 0x8000;
+    uint16_t default_t = 0x6666;
+
+    	// sgp41 conditioning during 10 seconds before measuring
+    for (int i = 0; i < 10; i++) {
+        uint16_t sraw_voc;
+
+        sensirion_i2c_hal_sleep_usec(1000000);
+
+        error = sgp41_execute_conditioning(default_rh, default_t, &sraw_voc);
+        if (error) {
+            printk("Error executing sgp41_execute_conditioning(): "
+                   "%i\n",
+                   error);
+        } else {
+            printk("SRAW VOC: %u\n", sraw_voc);
+            printk("SRAW NOx: conditioning\n");
+        }
+    }
+}
+
+
 void main(void){
 
-	int8_t err = 0;
+	int16_t error = 0;
 
-	// Initialize I2C
+	sensirion_i2c_hal_init();
 
-	if(!device_is_ready(i2c_dev)) { 
-		printk("i2c_dev not ready\n");
-		return;
-	} else {
-		printk("i2c_dev initialized\n");
-	}
+	clean_up_sensor_states(error);
 
-	//wake up Sensor
+	start_measurement(error);
 
-	offset = 0;
-	clear_buffer(i2c_buffer);
-	offset = sensirion_i2c_add_command_to_bufferMy(&i2c_buffer[0], offset, 0x36F6);
-	err = i2c_write(i2c_dev, i2c_buffer, offset, SCD41_I2C_ADDRESS);
-	if( err < 0) {printErr(err, "W: Wake Up", &i2c_buffer[0]);}
-	else {printSuc("W: Wake Up", &i2c_buffer[0]);}
-	k_msleep(SLEEP_TIME_MS*2);
-
-	// clean up states before 
-		//stop per. measurement
-	offset = 0;
-	clear_buffer(i2c_buffer);
-	offset = sensirion_i2c_add_command_to_bufferMy(&i2c_buffer[0], offset, 0x3F86);
-	err = i2c_write(i2c_dev, i2c_buffer, offset, SCD41_I2C_ADDRESS);
-	if( err < 0) {printErr(err, "W: Stop Meas.", &i2c_buffer[0]);}
-	else {printSuc("W: Stop Meas.", &i2c_buffer[0]);}
-	
-	k_msleep(SLEEP_TIME_MS*5);
-    	// reinit
-	offset = 0;
-	clear_buffer(i2c_buffer);
-	offset = sensirion_i2c_add_command_to_bufferMy(&i2c_buffer[0], offset, 0x3646);
-	err = i2c_write(i2c_dev, i2c_buffer, offset, SCD41_I2C_ADDRESS);
-	if( err < 0) {printErr(err, "W: ReInit", &i2c_buffer[0]);}
-	else {printSuc("W: ReInit", &i2c_buffer[0]);}
-	k_msleep(SLEEP_TIME_MS*5);
-
-	// Start Measurement
-	do {
-		offset = 0;
-		clear_buffer(i2c_buffer);
-		offset = sensirion_i2c_add_command_to_bufferMy(&i2c_buffer[0], offset, SCD41_I2C_START_PERIODIC_MEASUREMENT);
-		err = i2c_write(i2c_dev, i2c_buffer, offset, SCD41_I2C_ADDRESS);
-		if( err < 0) {printErr(err, "W: Start Meas.", &i2c_buffer[0]);}
-		else {printSuc("W: Start Meas.", &i2c_buffer[0]);}
-	} while(false);
-	
-	printk("Waiting for first measurement... (5 sec)\n");
-	k_msleep(5000);
-
+	// SGP41 Parameters for deactivated humidity compensation:
+    uint16_t default_rh = 0x8000;
+    uint16_t default_t = 0x6666;
 
 	while (1) {
-		
+
+		k_msleep(SLEEP_TIME_MS);
+
 		// Read Measurement
-		do{
-			printk("-----NEW READ-----\n");
-			// Check if data is ready
-			/*
-			offset = 0;
-			clear_buffer(i2c_buffer);
-			offset = sensirion_i2c_add_command_to_bufferMy(&i2c_buffer[0], offset, 0xE4B8);
-			err = i2c_write(i2c_dev, i2c_buffer, 2, SCD41_I2C_ADDRESS);
-			if( err < 0) {printErr(err, "DataCheck - write", &i2c_buffer[0]); break;}
-			else {printSuc(err, "DataCheck - write", &i2c_buffer[0]);}
-
-			k_msleep(1000);
-
-			clear_buffer(i2c_buffer);
-			err = i2c_read(i2c_dev, i2c_buffer, 2, SCD41_I2C_ADDRESS);
-			if( err < 0) {printErr(err, "DataCheck - read", &i2c_buffer[0]); break;}
-			else {printSuc(err, "DataCheck - read", &i2c_buffer[0]);}
-
-			
-			int data_ready = (uint16_t)i2c_buffer[0] << 8 | (uint16_t)i2c_buffer[1];
-			if ((data_ready & 0x07FF) != 0) {printk("(%#4x & 0x07FF) != 0", data_ready);continue;}
-			*/
-			// Read Data
-			uint16_t co2;
-        	int32_t temperature;
-        	int32_t humidity;
-
-			offset = 0;
-			clear_buffer(i2c_buffer);
-			offset = sensirion_i2c_add_command_to_bufferMy(&i2c_buffer[0], offset, 0xEC05);
-			err = i2c_write(i2c_dev, i2c_buffer, offset, SCD41_I2C_ADDRESS); 
-			if( err < 0) {printErr(err, "W: GetData", &i2c_buffer[0]); break;}
-			else {printSuc("W: GetData", &i2c_buffer[0]);}
-
-			k_msleep(1000);
-
-			
-			err = i2c_read(i2c_dev, i2c_buffer, 6, SCD41_I2C_ADDRESS);
-			if( err < 0) {printErr(err, "W: GetData", &i2c_buffer[0]); break;}
-			else {printSuc("W: GetData", &i2c_buffer[0]);}
-
-			// Calculate Measurements
-			co2 = (uint16_t)i2c_buffer[0] << 8 | (uint16_t)i2c_buffer[1];
-    		temperature = (uint16_t)i2c_buffer[2] << 8 | (uint16_t)i2c_buffer[3];
-    		humidity = (uint16_t)i2c_buffer[4] << 8 | (uint16_t)i2c_buffer[5];
-
-			// Print Data
-			if (co2 == 0) {
-				printk("Invalid sample detected, skipping.\n");
-			} else {
-				printk("CO2: %u\n", co2);
-				printk("Temperature: %d m°C\n", temperature);
-				printk("Humidity: %d mRH\n", humidity);
+			// SCD41
+			bool data_ready_flag = false;
+			error = scd4x_get_data_ready_flag(&data_ready_flag);
+			if (error) {
+				printk("Error executing scd4x_get_data_ready_flag(): %i\n", error);
+				continue;
+			}
+			if (!data_ready_flag) {
+				continue;
 			}
 
-		}while(false);
+			bool valid_SC41_data = false;
+			uint16_t SC41_co2;
+			int32_t SCD41_temperature;
+			int32_t SCD41_humidity;
+			error = scd4x_read_measurement(&SC41_co2, &SCD41_temperature, &SCD41_humidity);
+			if (error) {
+				printk("Error executing scd4x_read_measurement(): %i\n", error);
+			} else if (SC41_co2 == 0) {
+				printk("Invalid sample detected, skipping.\n");
+			} else {
+				valid_SC41_data = true;
+			}
+			// SVM41
+			bool valid_SVM41_data = false;
+			int16_t SVM41_humidity;
+			int16_t SVM41_temperature;
+			int16_t SVM41_voc_index;
+			int16_t SVM41_nox_index;
+			error = svm41_read_measured_values_as_integers(&SVM41_humidity, &SVM41_temperature,
+														&SVM41_voc_index, &SVM41_nox_index);
+			if (error) {
+				printk("Error executing svm41_read_measured_values_as_integers(): "
+					"%i\n",
+					error);
+			} else {
+				valid_SVM41_data = true;
+			}
+			// SGP41
+			bool valid_SGP41_data = false;
+			uint16_t sraw_voc;
+			uint16_t sraw_nox;
 
-		k_msleep(SLEEP_TIME_MS*5);
+			error = sgp41_measure_raw_signals(default_rh, default_t, &sraw_voc,
+											&sraw_nox);
+			if (error) {
+				printk("Error executing sgp41_measure_raw_signals(): "
+					"%i\n",
+					error);
+			} else {
+				valid_SGP41_data = true;
+			}
+
+		// Print Measurements
+			if(valid_SC41_data) {
+				printk("SCD41 Measurement->\n");
+				printk("CO2: %u\n", SC41_co2);
+				printk("Temperature: %d m°C\n", SCD41_temperature);
+				printk("Humidity: %d mRH\n", SCD41_humidity);
+			}
+
+			if(valid_SVM41_data) {
+				printk("SCD41 Measurement->\n");
+				printk("Humidity: %i milli %% RH\n", SVM41_humidity * 10);
+				printk("Temperature: %i milli °C\n", (SVM41_temperature >> 1) * 10);
+				printk("VOC index: %i (index * 10)\n", SVM41_voc_index);
+				printk("NOx index: %i (index * 10)\n", SVM41_nox_index);
+			}
+
+			if(valid_SGP41_data) {
+				printk("SCD41 Measurement->\n");
+				printk("SRAW VOC: %u\n", sraw_voc);
+				printk("SRAW NOx: %u\n", sraw_nox);
+			}
+
+
+			k_msleep(SLEEP_TIME_MS);
 	}
 }
