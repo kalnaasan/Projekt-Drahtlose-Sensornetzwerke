@@ -8,13 +8,6 @@
 #include "sensirion_common.h"
 #include "sensirion_i2c_hal.h"
 
-#define SLEEP_TIME_MS 1000
-
-
-
-#define I2C_NODE		DT_NODELABEL(i2c0)
-static const struct device *i2c_dev = DEVICE_DT_GET(I2C_NODE);
-
 void printErr(int err, char* errType, uint8_t* buffer) {
 	printk("ERR = %d |\t Type: %s, Buffer = [%d, %d] -> HEX %#2x%2x\n", err, errType, buffer[0], buffer[1], buffer[0], buffer[1]);
 }
@@ -99,9 +92,8 @@ void main(void){
 
 	while (1) {
 
-		k_msleep(SLEEP_TIME_MS);
-
 		// Read Measurement
+		sensirion_i2c_hal_sleep_usec(1000000);	// 1 sec
 			// SCD41
 			bool data_ready_flag = false;
 			error = scd4x_get_data_ready_flag(&data_ready_flag);
@@ -176,8 +168,5 @@ void main(void){
 				printk("SRAW VOC: %u\n", sraw_voc);
 				printk("SRAW NOx: %u\n", sraw_nox);
 			}
-
-
-			k_msleep(SLEEP_TIME_MS);
 	}
 }
