@@ -156,7 +156,7 @@ void main(void){
 			}
 
 			if(valid_SVM41_data) {
-				printk("SCD41 Measurement->\n");
+				printk("SVM41 Measurement->\n");
 				printk("Humidity: %i milli %% RH\n", SVM41_humidity * 10);
 				printk("Temperature: %i milli °C\n", (SVM41_temperature >> 1) * 10);
 				printk("VOC index: %i (index * 10)\n", SVM41_voc_index);
@@ -164,7 +164,7 @@ void main(void){
 			}
 
 			if(valid_SGP41_data) {
-				printk("SCD41 Measurement->\n");
+				printk("SGP41 Measurement->\n");
 				printk("SRAW VOC: %u\n", sraw_voc);
 				printk("SRAW NOx: %u\n", sraw_nox);
 			}
