@@ -35,7 +35,7 @@ void clean_up_sensor_states(int16_t* error) {
 	// SGP41 - NOT NEEDED?
 }
 
-void self_test_sensors(int16_t* error) {
+void self_test_SGP41(int16_t* error) {
 
 	uint16_t test_result;
 
@@ -90,9 +90,9 @@ void main(void){
 	sensirion_i2c_hal_init();
 
 	clean_up_sensor_states(error);
+	self_test_SGP41(error);
 
 	start_measurement(error);
-
 	// SGP41 Parameters for deactivated humidity compensation:
     uint16_t default_rh = 0x8000;
     uint16_t default_t = 0x6666;
