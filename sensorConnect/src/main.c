@@ -16,7 +16,7 @@ static const struct device *i2c_dev = DEVICE_DT_GET(I2C_NODE);
 static uint8_t i2c_buffer[9];
 static uint16_t offset;
 
-uint16_t sensirion_i2c_add_command_to_buffer(uint8_t* buffer, uint16_t offset,
+uint16_t sensirion_i2c_add_command_to_bufferMy(uint8_t* buffer, uint16_t offset,
                                              uint16_t command) {
     buffer[offset++] = (uint8_t)((command & 0xFF00) >> 8);
     buffer[offset++] = (uint8_t)((command & 0x00FF) >> 0);
@@ -50,7 +50,7 @@ void main(void){
 
 	offset = 0;
 	clear_buffer(i2c_buffer);
-	offset = sensirion_i2c_add_command_to_buffer(&i2c_buffer[0], offset, 0x36F6);
+	offset = sensirion_i2c_add_command_to_bufferMy(&i2c_buffer[0], offset, 0x36F6);
 	err = i2c_write(i2c_dev, i2c_buffer, offset, SCD41_I2C_ADDRESS);
 	if( err < 0) {printErr(err, "W: Wake Up", &i2c_buffer[0]);}
 	else {printSuc("W: Wake Up", &i2c_buffer[0]);}
@@ -60,7 +60,7 @@ void main(void){
 		//stop per. measurement
 	offset = 0;
 	clear_buffer(i2c_buffer);
-	offset = sensirion_i2c_add_command_to_buffer(&i2c_buffer[0], offset, 0x3F86);
+	offset = sensirion_i2c_add_command_to_bufferMy(&i2c_buffer[0], offset, 0x3F86);
 	err = i2c_write(i2c_dev, i2c_buffer, offset, SCD41_I2C_ADDRESS);
 	if( err < 0) {printErr(err, "W: Stop Meas.", &i2c_buffer[0]);}
 	else {printSuc("W: Stop Meas.", &i2c_buffer[0]);}
@@ -69,7 +69,7 @@ void main(void){
     	// reinit
 	offset = 0;
 	clear_buffer(i2c_buffer);
-	offset = sensirion_i2c_add_command_to_buffer(&i2c_buffer[0], offset, 0x3646);
+	offset = sensirion_i2c_add_command_to_bufferMy(&i2c_buffer[0], offset, 0x3646);
 	err = i2c_write(i2c_dev, i2c_buffer, offset, SCD41_I2C_ADDRESS);
 	if( err < 0) {printErr(err, "W: ReInit", &i2c_buffer[0]);}
 	else {printSuc("W: ReInit", &i2c_buffer[0]);}
@@ -79,7 +79,7 @@ void main(void){
 	do {
 		offset = 0;
 		clear_buffer(i2c_buffer);
-		offset = sensirion_i2c_add_command_to_buffer(&i2c_buffer[0], offset, SCD41_I2C_START_PERIODIC_MEASUREMENT);
+		offset = sensirion_i2c_add_command_to_bufferMy(&i2c_buffer[0], offset, SCD41_I2C_START_PERIODIC_MEASUREMENT);
 		err = i2c_write(i2c_dev, i2c_buffer, offset, SCD41_I2C_ADDRESS);
 		if( err < 0) {printErr(err, "W: Start Meas.", &i2c_buffer[0]);}
 		else {printSuc("W: Start Meas.", &i2c_buffer[0]);}
@@ -98,7 +98,7 @@ void main(void){
 			/*
 			offset = 0;
 			clear_buffer(i2c_buffer);
-			offset = sensirion_i2c_add_command_to_buffer(&i2c_buffer[0], offset, 0xE4B8);
+			offset = sensirion_i2c_add_command_to_bufferMy(&i2c_buffer[0], offset, 0xE4B8);
 			err = i2c_write(i2c_dev, i2c_buffer, 2, SCD41_I2C_ADDRESS);
 			if( err < 0) {printErr(err, "DataCheck - write", &i2c_buffer[0]); break;}
 			else {printSuc(err, "DataCheck - write", &i2c_buffer[0]);}
@@ -121,7 +121,7 @@ void main(void){
 
 			offset = 0;
 			clear_buffer(i2c_buffer);
-			offset = sensirion_i2c_add_command_to_buffer(&i2c_buffer[0], offset, 0xEC05);
+			offset = sensirion_i2c_add_command_to_bufferMy(&i2c_buffer[0], offset, 0xEC05);
 			err = i2c_write(i2c_dev, i2c_buffer, offset, SCD41_I2C_ADDRESS); 
 			if( err < 0) {printErr(err, "W: GetData", &i2c_buffer[0]); break;}
 			else {printSuc("W: GetData", &i2c_buffer[0]);}
