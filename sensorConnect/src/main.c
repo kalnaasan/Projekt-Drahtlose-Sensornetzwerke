@@ -5,6 +5,8 @@
 #include <zephyr/sys/printk.h>
 
 #include "scd4x_i2c.h"
+#include "svm41_i2c.h"
+#include "sgp41_i2c.h"
 #include "sensirion_common.h"
 #include "sensirion_i2c_hal.h"
 
