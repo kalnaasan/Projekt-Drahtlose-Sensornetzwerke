@@ -6,7 +6,6 @@
 
 #include "scd4x_i2c.h"
 #include "svm41_i2c.h"
-#include "sgp41_i2c.h"
 #include "sensirion_common.h"
 #include "sensirion_i2c_hal.h"
 
@@ -27,20 +26,9 @@ void clean_up_sensor_states(int16_t* error) {
     if (error) {
         printk("Error executing svm41_device_reset(): %i\n", error);
     }
-	// SGP41 - NOT NEEDED?
 }
 
-void self_test_SGP41(int16_t* error) {
 
-	uint16_t test_result;
-
-	error = sgp41_execute_self_test(&test_result);
-    if (error) {
-        printk("Error executing sgp41_execute_self_test(): %i\n", error);
-    } else {
-        printk("Test result: %u\n", test_result);
-    }
-}
 
 void start_measurement(int16_t* error) {
 	// SCD41
@@ -58,23 +46,6 @@ void start_measurement(int16_t* error) {
 		// Parameters for deactivated SCD41_humidity compensation:
     uint16_t default_rh = 0x8000;
     uint16_t default_t = 0x6666;
-
-    	// sgp41 conditioning during 10 seconds before measuring
-    for (int i = 0; i < 10; i++) {
-        uint16_t sraw_voc;
-
-        sensirion_i2c_hal_sleep_usec(1000000);
-
-        error = sgp41_execute_conditioning(default_rh, default_t, &sraw_voc);
-        if (error) {
-            printk("Error executing sgp41_execute_conditioning(): "
-                   "%i\n",
-                   error);
-        } else {
-            printk("SRAW VOC: %u\n", sraw_voc);
-            printk("SRAW NOx: conditioning\n");
-        }
-    }
 }
 
 
@@ -85,12 +56,8 @@ void main(void){
 	sensirion_i2c_hal_init();
 
 	clean_up_sensor_states(error);
-	self_test_SGP41(error);
 
 	start_measurement(error);
-	// SGP41 Parameters for deactivated humidity compensation:
-    uint16_t default_rh = 0x8000;
-    uint16_t default_t = 0x6666;
 
 	while (1) {
 
@@ -134,20 +101,6 @@ void main(void){
 			} else {
 				valid_SVM41_data = true;
 			}
-			// SGP41
-			bool valid_SGP41_data = false;
-			uint16_t sraw_voc;
-			uint16_t sraw_nox;
-
-			error = sgp41_measure_raw_signals(default_rh, default_t, &sraw_voc,
-											&sraw_nox);
-			if (error) {
-				printk("Error executing sgp41_measure_raw_signals(): "
-					"%i\n",
-					error);
-			} else {
-				valid_SGP41_data = true;
-			}
 
 		// Print Measurements
 			if(valid_SC41_data) {
@@ -163,12 +116,6 @@ void main(void){
 				printk("Temperature: %i milli °C\n", (SVM41_temperature >> 1) * 10);
 				printk("VOC index: %i (index * 10)\n", SVM41_voc_index);
 				printk("NOx index: %i (index * 10)\n", SVM41_nox_index);
-			}
-
-			if(valid_SGP41_data) {
-				printk("SGP41 Measurement->\n");
-				printk("SRAW VOC: %u\n", sraw_voc);
-				printk("SRAW NOx: %u\n", sraw_nox);
 			}
 	}
 }

@@ -8,7 +8,6 @@ target_sources(app
                 PRIVATE 
                     src/main.c
                     src/scd4x_i2c.c
-                    src/sgp41_i2c.c
                     src/svm41_i2c.c
                     src/sensirion_i2c.c
                     src/sensirion_i2c_hal.c
