@@ -1,7 +1,19 @@
+#if defined(CONFIG_BT)
+#include "ble.h"
+#endif
+
+#if defined(CONFIG_CLI_SAMPLE_LOW_POWER)
+#include "low_power.h"
+#endif
+
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/i2c.h>
+
+#include <zephyr/drivers/uart.h>
+#include <zephyr/usb/usb_device.h>
+
 #include <zephyr/sys/printk.h>
 
 #include "scd4x_i2c.h"
@@ -9,12 +21,17 @@
 #include "sensirion_common.h"
 #include "sensirion_i2c_hal.h"
 
-void printErr(int err, char* errType, uint8_t* buffer) {
-	printk("ERR = %d |\t Type: %s, Buffer = [%d, %d] -> HEX %#2x%2x\n", err, errType, buffer[0], buffer[1], buffer[0], buffer[1]);
-}
-void printSuc(char* errType, uint8_t* buffer) {
-	printk("Command-> %s |\t Buffer = [%d, %d] -> HEX %#2x%2x\n", errType, buffer[0], buffer[1], buffer[0], buffer[1]);
-}
+LOG_MODULE_REGISTER(cli_sample, CONFIG_OT_COMMAND_LINE_INTERFACE_LOG_LEVEL);
+
+#define WELLCOME_TEXT \
+	"\n\r"\
+	"\n\r"\
+	"OpenThread Command Line Interface is now running.\n\r" \
+	"Use the 'ot' keyword to invoke OpenThread commands e.g. " \
+	"'ot thread start.'\n\r" \
+	"For the full commands list refer to the OpenThread CLI " \
+	"documentation at:\n\r" \
+	"https://github.com/openthread/openthread/blob/master/src/cli/README.md\n\r"
 
 void clean_up_sensor_states(int16_t* error) {
 	// SCD41
@@ -42,14 +59,57 @@ void start_measurement(int16_t* error) {
     if (error) {
         printk("Error executing svm41_start_measurement(): %i\n", error);
     }
-	// SGP41
-		// Parameters for deactivated SCD41_humidity compensation:
-    uint16_t default_rh = 0x8000;
-    uint16_t default_t = 0x6666;
 }
 
 
 void main(void){
+
+// CLI EXAMPLE 
+	#if DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_shell_uart), zephyr_cdc_acm_uart)
+		int ret;
+		const struct device *dev;
+		uint32_t dtr = 0U;
+
+		ret = usb_enable(NULL);
+		if (ret != 0) {
+			LOG_ERR("Failed to enable USB");
+			return 0;
+		}
+
+		dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_shell_uart));
+		if (dev == NULL) {
+			LOG_ERR("Failed to find specific UART device");
+			return 0;
+		}
+
+		LOG_INF("Waiting for host to be ready to communicate");
+
+		/* Data Terminal Ready - check if host is ready to communicate */
+		while (!dtr) {
+			ret = uart_line_ctrl_get(dev, UART_LINE_CTRL_DTR, &dtr);
+			if (ret) {
+				LOG_ERR("Failed to get Data Terminal Ready line state: %d",
+					ret);
+				continue;
+			}
+			k_msleep(100);
+		}
+
+		/* Data Carrier Detect Modem - mark connection as established */
+		(void)uart_line_ctrl_set(dev, UART_LINE_CTRL_DCD, 1);
+		/* Data Set Ready - the NCP SoC is ready to communicate */
+		(void)uart_line_ctrl_set(dev, UART_LINE_CTRL_DSR, 1);
+	#endif
+
+		LOG_INF(WELLCOME_TEXT);
+
+	#if defined(CONFIG_BT)
+		ble_enable();
+	#endif
+
+	#if defined(CONFIG_CLI_SAMPLE_LOW_POWER)
+		low_power_enable();
+	#endif
 
 	int16_t error = 0;
 
@@ -60,9 +120,9 @@ void main(void){
 	start_measurement(error);
 
 	while (1) {
-
+		printk("->\t New Reading of Sensor Node\n");
 		// Read Measurement
-		sensirion_i2c_hal_sleep_usec(1000000);	// 1 sec
+		sensirion_i2c_hal_sleep_usec(1000000*2);	// 1 sec
 			// SCD41
 			bool data_ready_flag = false;
 			error = scd4x_get_data_ready_flag(&data_ready_flag);
@@ -71,6 +131,7 @@ void main(void){
 				continue;
 			}
 			if (!data_ready_flag) {
+				printk("SCD41 Data not ready\n");
 				continue;
 			}
 
@@ -82,7 +143,7 @@ void main(void){
 			if (error) {
 				printk("Error executing scd4x_read_measurement(): %i\n", error);
 			} else if (SC41_co2 == 0) {
-				printk("Invalid sample detected, skipping.\n");
+				printk("Invalid SCD41 sample detected, skipping this sensor.\n");
 			} else {
 				valid_SC41_data = true;
 			}
@@ -103,19 +164,22 @@ void main(void){
 			}
 
 		// Print Measurements
+			printk("->\tMeasurements\n");
+			printk("  SCD41 Measurement\n");
 			if(valid_SC41_data) {
-				printk("SCD41 Measurement->\n");
+				
 				printk("CO2: %u\n", SC41_co2);
 				printk("Temperature: %d m°C\n", SCD41_temperature);
 				printk("Humidity: %d mRH\n", SCD41_humidity);
-			}
-
+			}else(printk("No Valid Data.\n"));
+			
+			printk("  SVM41 Measurement\n");
 			if(valid_SVM41_data) {
-				printk("SVM41 Measurement->\n");
 				printk("Humidity: %i milli %% RH\n", SVM41_humidity * 10);
 				printk("Temperature: %i milli °C\n", (SVM41_temperature >> 1) * 10);
 				printk("VOC index: %i (index * 10)\n", SVM41_voc_index);
 				printk("NOx index: %i (index * 10)\n", SVM41_nox_index);
 			}
+			printk("\n");
 	}
 }
