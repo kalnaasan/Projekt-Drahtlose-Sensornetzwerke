@@ -1,3 +1,4 @@
+/* Optional OT Features*/
 #if defined(CONFIG_BT)
 #include "ble.h"
 #endif
@@ -10,10 +11,8 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/i2c.h>
-
 #include <zephyr/drivers/uart.h>
 #include <zephyr/usb/usb_device.h>
-
 #include <zephyr/sys/printk.h>
 
 #include "scd4x_i2c.h"
@@ -21,6 +20,7 @@
 #include "sensirion_common.h"
 #include "sensirion_i2c_hal.h"
 
+/* OT CLI Configuration */
 LOG_MODULE_REGISTER(cli_sample, CONFIG_OT_COMMAND_LINE_INTERFACE_LOG_LEVEL);
 
 #define WELLCOME_TEXT \
@@ -33,6 +33,23 @@ LOG_MODULE_REGISTER(cli_sample, CONFIG_OT_COMMAND_LINE_INTERFACE_LOG_LEVEL);
 	"documentation at:\n\r" \
 	"https://github.com/openthread/openthread/blob/master/src/cli/README.md\n\r"
 
+
+/* Multithreading */
+#define THREAD0_STACKSIZE 512
+#define THREAD1_STACKSIZE 512
+#define THREAD0_PRIORITY 4 
+#define THREAD1_PRIORITY 4
+K_MUTEX_DEFINE(test_mutex);
+
+void shared_code_section(void){
+	/* Lock the mutex */
+	k_mutex_lock(&test_mutex, K_FOREVER);
+	/* Do something */
+	/* Unlock the mutex */
+	k_mutex_unlock(&test_mutex);
+}
+
+/* Sensor functionality */
 void clean_up_sensor_states(int16_t* error) {
 	// SCD41
 	scd4x_wake_up();
@@ -44,8 +61,6 @@ void clean_up_sensor_states(int16_t* error) {
         printk("Error executing svm41_device_reset(): %i\n", error);
     }
 }
-
-
 
 void start_measurement(int16_t* error) {
 	// SCD41
@@ -62,9 +77,10 @@ void start_measurement(int16_t* error) {
 }
 
 
-void main(void){
+void ot_cli_thread(void)
+{
+	printk("ot_cli_thread started\n");
 
-// CLI EXAMPLE 
 	#if DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_shell_uart), zephyr_cdc_acm_uart)
 		int ret;
 		const struct device *dev;
@@ -110,7 +126,11 @@ void main(void){
 	#if defined(CONFIG_CLI_SAMPLE_LOW_POWER)
 		low_power_enable();
 	#endif
+}
 
+void sensor_reading_thread(void)
+{
+	printk("sensor_reading_thread started\n");
 	int16_t error = 0;
 
 	sensirion_i2c_hal_init();
@@ -183,3 +203,10 @@ void main(void){
 			printk("\n");
 	}
 }
+
+// Define and initialize threads
+K_THREAD_DEFINE(thread0_id, THREAD0_STACKSIZE, ot_cli_thread, NULL, NULL, NULL,
+		THREAD0_PRIORITY, 0, 5000);
+
+K_THREAD_DEFINE(thread1_id, THREAD1_STACKSIZE, sensor_reading_thread, NULL, NULL, NULL,
+		THREAD1_PRIORITY, 0, 5000);
