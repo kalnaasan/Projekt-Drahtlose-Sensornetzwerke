@@ -1,7 +1,3 @@
-//#include <nrf_delay.h>
-//#include <nrf_drv_twi.h>
-//#include <stdio.h>
-
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/i2c.h>
@@ -11,17 +7,10 @@
 #include "sensirion_config.h"
 #include "sensirion_i2c_hal.h"
 
-/**
- * Nordic specific configuration. Not needed as they are within the i2c
- * device. ----->
- */
-//#define SENSIRION_SDA_PIN 0
-//#define SENSIRION_SCL_PIN 2
 
 /**
- * New TWI instance.
+ * Define I2C Node.
  */
-//static const nrf_drv_twi_t i2c_instance = NRF_DRV_TWI_INSTANCE(0);
 #define I2C_NODE		DT_NODELABEL(i2c0)
 static const struct device *i2c_dev;
 
