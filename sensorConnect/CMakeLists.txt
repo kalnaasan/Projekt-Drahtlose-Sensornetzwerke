@@ -11,4 +11,5 @@ target_sources(app PRIVATE src/main.c
                     src/svm41_i2c.c
                     src/sensirion_i2c.c
                     src/sensirion_i2c_hal.c
-                    src/sensirion_common.c)
+                    src/sensirion_common.c
+                    src/sensor_functionality.c)
