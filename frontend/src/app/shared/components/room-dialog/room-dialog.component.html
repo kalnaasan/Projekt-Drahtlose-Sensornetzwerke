@@ -1,0 +1,15 @@
+<h2 mat-dialog-title>Add new Room</h2>
+<mat-dialog-content>
+  <form >
+    <mat-form-field style="display: block;">
+      <mat-label>Room Name</mat-label>
+      <input matInput formControlName="roomName" placeholder="Enter the Name " required>
+      <mat-error >(Minimum three letters)</mat-error>
+    </mat-form-field>
+
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions>
+  <button mat-button >Cancel</button>
+  <button mat-raised-button color="primary" >Submit</button>
+</mat-dialog-actions>
