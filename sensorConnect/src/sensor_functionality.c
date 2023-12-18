@@ -42,7 +42,7 @@ void start_measurement(int16_t* error) {
 }
 
 void read_measurement() {
-	printk("->\t New Reading of Sensor Node\n");
+	printk("------------------------\n");
 	
 	int16_t error = 0;
 	
@@ -84,8 +84,8 @@ void read_measurement() {
 }
 
 void print_measurement() {
-	printk("->\tMeasurements\n");
-	printk("  SCD41 Measurement\n");
+	printk("->Measurements\n");
+	printk("  SCD41\n");
 	if(valid_SC41_data) {
 		
 		printk("CO2: %u\n", SCD41_co2);
@@ -93,7 +93,7 @@ void print_measurement() {
 		printk("Humidity: %d mRH\n", SCD41_humidity);
 	}else(printk("No Valid Data.\n"));
 	
-	printk("  SVM41 Measurement\n");
+	printk("  SVM41\n");
 	if(valid_SVM41_data) {
 		printk("Humidity: %i milli %% RH\n", SVM41_humidity * 10);
 		printk("Temperature: %i milli °C\n", (SVM41_temperature >> 1) * 10);
@@ -106,19 +106,16 @@ void print_measurement() {
 const char* create_coap_message() {
 	const char jsonBuffer[TEXTBUFFER_SIZE];
 
-    // Build the JSON string manually
-    int ret = snprintk(jsonBuffer, sizeof(jsonBuffer),
-                       "{\"SCD41\":{\"co2\":%u,\"temp\":%d,\"hum\":%d},\"SVM41\":{\"hum\":%i,\"temp\":%i,\"voc\":%i,\"nox\":%i}}",
+   	int ret = snprintk(jsonBuffer, sizeof(jsonBuffer),
+                       "{\"id\":1050299748,\"value\":{\"scd41_co2\":%u,\"scd41_temp\":%d,\"scd41_hum\":%d,\"svm41_hum\":%i,\"svm41_temp\":%i,\"svm41_voc\":%i,\"svm41_nox\":%i}",
                        SCD41_co2, SCD41_temperature, SCD41_humidity, SVM41_humidity * 10, (SVM41_temperature >> 1) * 10, SVM41_voc_index, SVM41_nox_index);
-
-    if (ret >= 0 && ret < sizeof(jsonBuffer))
-    {
-        // Print the JSON Encoded Data to the console
-        printk("JSON Encoded Data Inside: %s\n", jsonBuffer);
-    }
-    else
-    {
-        printk("JSON Encoding Failed: %d\n", ret);
-    }
-	return jsonBuffer;
+	
+    if (ret >= 0 && ret < sizeof(jsonBuffer)) {printk("JSON Encoded Data: %s\n", jsonBuffer);}
+    else {printk("JSON Encoding Failed: %d\n", ret);}
+	
+	char* buf = malloc(sizeof(char)*TEXTBUFFER_SIZE);
+	for(int i = 0; i < TEXTBUFFER_SIZE; ++i) 
+        buf[i] = jsonBuffer[i];
+	
+	return buf;
 }

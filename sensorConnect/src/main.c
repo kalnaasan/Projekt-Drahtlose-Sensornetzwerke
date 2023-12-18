@@ -17,6 +17,15 @@ void coap_init(void);
 
 void main(void){
 	int16_t error = 0;
+	/*
+	SCD41_co2 = 1135;
+	SCD41_temperature = 23431;
+	SCD41_humidity = 44123;
+	SVM41_humidity = 39600;
+	SVM41_temperature = 23880;
+	SVM41_voc_index = 325;
+	SVM41_nox_index = 18;
+	*/
 
 	/* Init I2C, SC41, SVM41 */
 	sensirion_i2c_hal_init();
@@ -68,25 +77,7 @@ static void coap_send_data_request(void){
 	}
 
 	const char* my_sensor_data = create_coap_message();
-	printk("SCD41 co2: %u", SCD41_co2);
-	const char jsonBuffer[TEXTBUFFER_SIZE];
 
-    // Build the JSON string manually
-    int ret = snprintk(jsonBuffer, sizeof(jsonBuffer),
-                       "{\"SCD41\":{\"co2\":%u,\"temp\":%d,\"hum\":%d},\"SVM41\":{\"hum\":%i,\"temp\":%i,\"voc\":%i,\"nox\":%i}}",
-                       SCD41_co2, SCD41_temperature, SCD41_humidity, SVM41_humidity * 10, (SVM41_temperature >> 1) * 10, SVM41_voc_index, SVM41_nox_index);
-
-    if (ret >= 0 && ret < sizeof(jsonBuffer))
-    {
-        // Print the JSON Encoded Data to the console
-        printk("JSON Encoded Data Inside: %s\n", jsonBuffer);
-    }
-    else
-    {
-        printk("JSON Encoding Failed: %d\n", ret);
-    }
-	return jsonBuffer;
-    printk("JSON Encoded Data Outside: %s\n", my_sensor_data);
 	do{
 		myMessage = otCoapNewMessage(myInstance, NULL);
 		if (myMessage == NULL) {
