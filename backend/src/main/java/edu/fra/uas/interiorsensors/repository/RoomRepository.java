@@ -1,8 +1,9 @@
 package edu.fra.uas.interiorsensors.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import edu.fra.uas.interiorsensors.Classes.Room;
 import org.springframework.stereotype.Repository;
+
+import edu.fra.uas.interiorsensors.model.Room;
 
 import java.util.Optional;
 import java.util.UUID;

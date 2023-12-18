@@ -1,7 +1,7 @@
 package edu.fra.uas.interiorsensors.controller;
 
-import edu.fra.uas.interiorsensors.Classes.ValueMeasure;
 import edu.fra.uas.interiorsensors.common.ResponseMessage;
+import edu.fra.uas.interiorsensors.model.ValueMeasure;
 import edu.fra.uas.interiorsensors.repository.RoomRepository;
 import edu.fra.uas.interiorsensors.repository.ValueMeasureRepository;
 import org.slf4j.Logger;

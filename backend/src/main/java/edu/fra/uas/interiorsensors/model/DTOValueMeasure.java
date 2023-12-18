@@ -1,4 +1,4 @@
-package edu.fra.uas.interiorsensors.Classes;
+package edu.fra.uas.interiorsensors.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

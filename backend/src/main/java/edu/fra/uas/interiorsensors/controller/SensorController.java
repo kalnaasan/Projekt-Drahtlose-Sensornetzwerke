@@ -1,10 +1,10 @@
 package edu.fra.uas.interiorsensors.controller;
 
 
-import edu.fra.uas.interiorsensors.Classes.DTOValueMeasure;
-import edu.fra.uas.interiorsensors.Classes.Sensor;
-import edu.fra.uas.interiorsensors.Classes.ValueMeasure;
 import edu.fra.uas.interiorsensors.common.ResponseMessage;
+import edu.fra.uas.interiorsensors.model.DTOValueMeasure;
+import edu.fra.uas.interiorsensors.model.Sensor;
+import edu.fra.uas.interiorsensors.model.ValueMeasure;
 import edu.fra.uas.interiorsensors.repository.SensorRepository;
 import edu.fra.uas.interiorsensors.repository.ValueMeasureRepository;
 import org.slf4j.Logger;
@@ -39,7 +39,7 @@ public class SensorController {
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ResponseMessage> index(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
         logger.debug("Indexing Sensor : {}",this.sensorRepository);
-        List<Sensor> sensors = sensorRepository.findAll();
+        List<Sensor> sensors = this.sensorRepository.findAll();
         return this.message("Indexing Sensor",sensors, HttpStatus.OK);
     }
 

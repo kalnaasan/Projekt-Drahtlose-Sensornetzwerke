@@ -27,8 +27,6 @@ public class CoAPServerImp {
 
     public CoAPServerImp() throws IllegalStateException, IOException {
         log.info("Starting CoAP server");
-        // Geben Sie die IPv6-Adresse als String an
-        String ipv6Address = "fd00:0000:fb01:0001::1";
         // Erstellen Sie ein InetAddress-Objekt
         InetAddress inetAddress = InetAddress.getByName(this.ipAddress);
         // Geben Sie den gewünschten Port an (z.B., 5683)
