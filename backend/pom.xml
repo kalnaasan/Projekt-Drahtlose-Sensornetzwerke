@@ -63,10 +63,11 @@
 			<version>7.0.2.Final</version> <!-- Verwende die neueste stabile Version -->
 		</dependency>
 
-
-
-
-
+		<dependency>
+			<groupId>io.github.open-coap</groupId>
+			<artifactId>coap-core</artifactId>
+			<version>6.19.0</version>
+		</dependency>
 	</dependencies>
 
 	<build>
