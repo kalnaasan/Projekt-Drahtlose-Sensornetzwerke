@@ -23,10 +23,10 @@ export class SidebarComponent implements OnInit {
 
   goToSensor() {
     // Use the Router to navigate to the 'shared/sensors' route
-    this.router.navigate(['/sensors']);
+    this.router.navigate(['dashboard/sensors']);
   }
 
   addNewRaum() {
-    this.router.navigate(['/rooms']);
+    this.router.navigate(['dashboard/rooms1']);
   }
 }
