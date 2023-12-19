@@ -40,9 +40,11 @@ public class SensorController {
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ResponseMessage> index(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
     //    logger.debug("Indexing Sensor : {}",this.sensorRepository);
-        List<Sensor> sensors = this.sensorRepository.findAll();
+        List<Sensor> sensors = this.sensorRepository.findAllByRoom_Id(null);
         return this.message("Indexing Sensor",sensors, HttpStatus.OK);
     }
+
+
 
     @GetMapping("/{id}")
     public ResponseEntity<ResponseMessage> getById(@PathVariable UUID id) {
