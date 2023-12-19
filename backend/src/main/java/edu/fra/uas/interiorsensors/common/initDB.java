@@ -1,7 +1,7 @@
 package edu.fra.uas.interiorsensors.common;
 
-import edu.fra.uas.interiorsensors.Classes.Room;
-import edu.fra.uas.interiorsensors.Classes.Sensor;
+import edu.fra.uas.interiorsensors.model.Room;
+import edu.fra.uas.interiorsensors.model.Sensor;
 import edu.fra.uas.interiorsensors.repository.RoomRepository;
 import edu.fra.uas.interiorsensors.repository.SensorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
