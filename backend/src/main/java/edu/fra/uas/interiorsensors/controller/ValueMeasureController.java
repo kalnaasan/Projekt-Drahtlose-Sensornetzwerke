@@ -2,10 +2,8 @@ package edu.fra.uas.interiorsensors.controller;
 
 import edu.fra.uas.interiorsensors.common.ResponseMessage;
 import edu.fra.uas.interiorsensors.model.ValueMeasure;
-import edu.fra.uas.interiorsensors.repository.RoomRepository;
 import edu.fra.uas.interiorsensors.repository.ValueMeasureRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -16,38 +14,40 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("values")
-public class ValueMeasureController {
+public class ValueMeasureController implements BaseController<ValueMeasure> {
     private final ValueMeasureRepository valueMeasureRepository;
 
-    private final Logger logger = LoggerFactory.getLogger(RoomRepository.class);
     @Autowired
     public ValueMeasureController(ValueMeasureRepository valueMeasureRepository) {
         this.valueMeasureRepository = valueMeasureRepository;
     }
 
-
-
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ResponseMessage> index(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
-        logger.debug("Indexing ValueMeasure : {}",this.valueMeasureRepository);
+    @Override
+    public ResponseEntity<ResponseMessage> index() {
+        log.debug("Indexing ValueMeasure : {}", this.valueMeasureRepository.count());
         List<ValueMeasure> values = valueMeasureRepository.findAll();
-        return this.message("Indexing Values",values, HttpStatus.OK);
+        return this.message("Indexing Values", values, HttpStatus.OK);
     }
 
     @GetMapping("/{id}")
+    @Override
     public ResponseEntity<ResponseMessage> getById(@PathVariable UUID id) {
-        logger.debug("Getting ValueMeasure by id: {} ", id);
-        Optional<ValueMeasure> optionalvalue = this.valueMeasureRepository.findById(id);
-        return optionalvalue.map(
+        log.debug("Getting ValueMeasure by id: {} ", id);
+        Optional<ValueMeasure> optionalValue = this.valueMeasureRepository.findById(id);
+        return optionalValue.map(
                         value -> this.message("Getting Room by id", value, HttpStatus.OK))
                 .orElseGet(() -> this.message("Room not found", null, HttpStatus.NOT_FOUND));
     }
 
     @PostMapping
+    @Override
     public ResponseEntity<ResponseMessage> create(@RequestBody ValueMeasure valueMeasure) {
-        logger.debug("Create ValueMeasure: {}", valueMeasure);
+        log.debug("Create ValueMeasure: {}", valueMeasure);
 
         // Überprüfe, ob ein ValueMeasure mit der gegebenen ID bereits existiert
         if (valueMeasure.getId() != null && valueMeasureRepository.existsById(valueMeasure.getId())) {
@@ -68,8 +68,9 @@ public class ValueMeasureController {
 
 
     @PutMapping("/{id}")
+    @Override
     public ResponseEntity<ResponseMessage> update(@PathVariable("id") UUID id, @RequestBody ValueMeasure valueMeasure) {
-        logger.debug("Updating User by id: {}", id);
+        log.debug("Updating User by id: {}", id);
         Optional<ValueMeasure> optionalValue = this.valueMeasureRepository.findById(id);
         if (optionalValue.isPresent() && optionalValue.get().getId().equals(valueMeasure.getId())) {
 
@@ -81,17 +82,17 @@ public class ValueMeasureController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ResponseMessage> delete(@PathVariable("id") UUID id){
-        logger.debug("Deleting ValueMeasure by id: {}", id);
+    @Override
+    public ResponseEntity<ResponseMessage> delete(@PathVariable("id") UUID id) {
+        log.debug("Deleting ValueMeasure by id: {}", id);
         Optional<ValueMeasure> ValueMeasureUpdate = this.valueMeasureRepository.findById(id);
 
-        if (ValueMeasureUpdate.isPresent()){
+        if (ValueMeasureUpdate.isPresent()) {
             //this.valueMeasureRepository.deleteById(id);
-            return this.message("ValueMeasure is deleted", null , HttpStatus.NO_CONTENT);
+            return this.message("ValueMeasure is deleted", null, HttpStatus.NO_CONTENT);
         }
-        return this.message("ValueMeasure is not found", null , HttpStatus.NO_CONTENT);
+        return this.message("ValueMeasure is not found", null, HttpStatus.NO_CONTENT);
     }
-
 
 
     private ResponseEntity<ResponseMessage> message(String message, Object data, HttpStatus httpStatus) {

@@ -13,8 +13,6 @@ import java.util.Map;
 public class DTOValueMeasure {
 
     private Integer id;
-   private Map<String , Integer> values = new HashMap<>();
-
-
+    private Map<String, Integer> values = new HashMap<>();
 
 }
