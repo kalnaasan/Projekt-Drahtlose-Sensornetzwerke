@@ -25,7 +25,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/web/rooms")
+@RequestMapping("rooms")
 public class RoomController {
 
     private final RoomRepository roomRepository;

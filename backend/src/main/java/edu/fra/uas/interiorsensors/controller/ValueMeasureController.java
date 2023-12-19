@@ -17,7 +17,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/web/values")
+@RequestMapping("values")
 public class ValueMeasureController {
     private final ValueMeasureRepository valueMeasureRepository;
 
