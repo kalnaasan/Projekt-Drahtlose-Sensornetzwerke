@@ -19,8 +19,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+@CrossOrigin(origins = "*")
 @RestController
-@RequestMapping("/api/v1/web/sensors")
+@RequestMapping("sensors")
 public class SensorController {
 
     private final SensorRepository sensorRepository;
@@ -38,8 +39,8 @@ public class SensorController {
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ResponseMessage> index(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
-        logger.debug("Indexing Sensor : {}",this.sensorRepository);
-        List<Sensor> sensors = sensorRepository.findAll();
+    //    logger.debug("Indexing Sensor : {}",this.sensorRepository);
+        List<Sensor> sensors = this.sensorRepository.findAll();
         return this.message("Indexing Sensor",sensors, HttpStatus.OK);
     }
 
