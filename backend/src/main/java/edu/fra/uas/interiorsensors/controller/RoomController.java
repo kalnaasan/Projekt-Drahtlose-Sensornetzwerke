@@ -6,8 +6,6 @@ import edu.fra.uas.interiorsensors.model.Room;
 import edu.fra.uas.interiorsensors.repository.RoomRepository;
 
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,8 +31,6 @@ public class RoomController implements BaseController<Room> {
 
     private final RoomRepository roomRepository;
 
-    private final Logger logger = LoggerFactory.getLogger(RoomRepository.class);
-
     @Autowired
     public RoomController(RoomRepository roomRepository) {
         this.roomRepository = roomRepository;
@@ -43,7 +39,7 @@ public class RoomController implements BaseController<Room> {
     @GetMapping
     @Override
     public ResponseEntity<ResponseMessage> index() {
-        logger.debug("Indexing Room : {}", this.roomRepository);
+        log.debug("Indexing Room : {}", this.roomRepository);
         List<Room> rooms = roomRepository.findAll();
         return this.message("Indexing Room", rooms, HttpStatus.OK);
     }
@@ -51,7 +47,7 @@ public class RoomController implements BaseController<Room> {
     @GetMapping("/{id}")
     @Override
     public ResponseEntity<ResponseMessage> getById(@PathVariable UUID id) {
-        logger.debug("Getting User by id: {} ", id);
+        log.debug("Getting User by id: {} ", id);
         Optional<Room> optionalRoom = this.roomRepository.findById(id);
         return optionalRoom.map(
                         order -> this.message("Getting Room by id", order, HttpStatus.OK))
@@ -61,7 +57,7 @@ public class RoomController implements BaseController<Room> {
     @PostMapping
     @Override
     public ResponseEntity<ResponseMessage> create(@RequestBody Room room) {
-        logger.debug("create room: {}", room);
+        log.debug("create room: {}", room);
         Optional<Room> optionalRoom = (room.getId() != null) ? this.roomRepository.findById(room.getId()) : Optional.empty();
 
         if (optionalRoom.isPresent() && roomRepository.existsByName(room.getName())) {
@@ -74,7 +70,7 @@ public class RoomController implements BaseController<Room> {
     @PutMapping("/{id}")
     @Override
     public ResponseEntity<ResponseMessage> update(@PathVariable("id") UUID id, @RequestBody Room room) {
-        logger.debug("Updating User by id: {}", id);
+        log.debug("Updating User by id: {}", id);
         Optional<Room> optionalRoom = this.roomRepository.findById(id);
         if (optionalRoom.isPresent() && optionalRoom.get().getId().equals(room.getId())) {
 
@@ -88,7 +84,7 @@ public class RoomController implements BaseController<Room> {
     @DeleteMapping("/{id}")
     @Override
     public ResponseEntity<ResponseMessage> delete(@PathVariable("id") UUID id) {
-        logger.debug("Deleting Room by id: {}", id);
+        log.debug("Deleting Room by id: {}", id);
         Optional<Room> roomUpdate = this.roomRepository.findById(id);
 
         if (roomUpdate.isPresent()) {
