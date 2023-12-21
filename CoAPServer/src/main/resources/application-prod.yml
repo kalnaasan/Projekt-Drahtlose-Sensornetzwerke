@@ -1,0 +1,20 @@
+# Logger activation
+logging:
+  level:
+    edu.fra.uas.coap.server: debug
+spring:
+  # Mysql connection
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://10.80.2.239:3306/sensor?useSSL=false&serverTimezone=UTC
+    username: sensor
+    password: sensor12345
+  ## Hibernate Properties
+  # The SQL dialect makes Hibernate generate better SQL for the chosen database
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL57Dialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
