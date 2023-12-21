@@ -33,6 +33,10 @@ public class ValueMeasure {
     @Column(name = "value")
     private double value;
 
+    @ManyToOne(targetEntity = Sensor.class)
+    @JoinColumn(name = "sensor_id")
+    private Sensor sensor;
+
     @CreationTimestamp
     @Column(name = "created_at")
     private Date createdAt;
@@ -40,10 +44,6 @@ public class ValueMeasure {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private Date updatedAt;
-
-    @ManyToOne(targetEntity = Sensor.class)
-    @JoinColumn(name = "sensor_id")
-    private Sensor sensor;
 }
 
 
