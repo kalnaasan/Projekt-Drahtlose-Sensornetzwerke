@@ -1,4 +1,4 @@
-package edu.frauas.coapserver;
+package edu.fra.uas.coap.server;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

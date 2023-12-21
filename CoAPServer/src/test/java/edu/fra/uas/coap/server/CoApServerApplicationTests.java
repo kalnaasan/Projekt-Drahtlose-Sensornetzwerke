@@ -1,4 +1,4 @@
-package edu.frauas.coapserver;
+package edu.fra.uas.coap.server;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
