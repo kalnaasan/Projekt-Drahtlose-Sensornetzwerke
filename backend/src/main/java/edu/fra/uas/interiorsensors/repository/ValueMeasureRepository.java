@@ -9,5 +9,4 @@ import java.util.UUID;
 @Repository
 public interface ValueMeasureRepository extends JpaRepository<ValueMeasure, UUID> {
     boolean existsByValue(double value);
-
 }
