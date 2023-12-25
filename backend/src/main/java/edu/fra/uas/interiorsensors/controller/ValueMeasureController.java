@@ -10,6 +10,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -18,7 +19,7 @@ import java.util.UUID;
 @CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("values")
-public class ValueMeasureController implements BaseController<ValueMeasure> {
+public class ValueMeasureController {
     private final ValueMeasureRepository valueMeasureRepository;
 
     @Autowired
@@ -27,15 +28,17 @@ public class ValueMeasureController implements BaseController<ValueMeasure> {
     }
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    @Override
-    public ResponseEntity<ResponseMessage> index() {
+    public ResponseEntity<ResponseMessage> index(@RequestParam(value = "sensor-name") String sensorName,
+                                                 @RequestParam(value = "from") String from,
+                                                 @RequestParam(value = "to") String to) {
         log.debug("Indexing ValueMeasure : {}", this.valueMeasureRepository.count());
-        List<ValueMeasure> values = valueMeasureRepository.findAll();
+        LocalDateTime fromDate = LocalDateTime.parse(from + "T00:00:00");
+        LocalDateTime toDate = LocalDateTime.parse(to + "T23:59:59");
+        List<ValueMeasure> values = valueMeasureRepository.findAllBySensor_NameAndReadAtBetweenOrderByCreatedAtAsc(sensorName, fromDate, toDate);
         return this.message("Indexing Values", values, HttpStatus.OK);
     }
 
     @GetMapping("/{id}")
-    @Override
     public ResponseEntity<ResponseMessage> getById(@PathVariable UUID id) {
         log.debug("Getting ValueMeasure by id: {} ", id);
         Optional<ValueMeasure> optionalValue = this.valueMeasureRepository.findById(id);
@@ -45,7 +48,6 @@ public class ValueMeasureController implements BaseController<ValueMeasure> {
     }
 
     @PostMapping
-    @Override
     public ResponseEntity<ResponseMessage> create(@RequestBody ValueMeasure valueMeasure) {
         log.debug("Create ValueMeasure: {}", valueMeasure);
 
@@ -66,9 +68,7 @@ public class ValueMeasureController implements BaseController<ValueMeasure> {
         return this.message("Created ValueMeasure", valueMeasureCreated, HttpStatus.CREATED);
     }
 
-
     @PutMapping("/{id}")
-    @Override
     public ResponseEntity<ResponseMessage> update(@PathVariable("id") UUID id, @RequestBody ValueMeasure valueMeasure) {
         log.debug("Updating User by id: {}", id);
         Optional<ValueMeasure> optionalValue = this.valueMeasureRepository.findById(id);
@@ -82,7 +82,6 @@ public class ValueMeasureController implements BaseController<ValueMeasure> {
     }
 
     @DeleteMapping("/{id}")
-    @Override
     public ResponseEntity<ResponseMessage> delete(@PathVariable("id") UUID id) {
         log.debug("Deleting ValueMeasure by id: {}", id);
         Optional<ValueMeasure> ValueMeasureUpdate = this.valueMeasureRepository.findById(id);
@@ -94,9 +93,7 @@ public class ValueMeasureController implements BaseController<ValueMeasure> {
         return this.message("ValueMeasure is not found", null, HttpStatus.NO_CONTENT);
     }
 
-
     private ResponseEntity<ResponseMessage> message(String message, Object data, HttpStatus httpStatus) {
         return new ResponseEntity<>(new ResponseMessage(message, data), httpStatus);
     }
-
 }
