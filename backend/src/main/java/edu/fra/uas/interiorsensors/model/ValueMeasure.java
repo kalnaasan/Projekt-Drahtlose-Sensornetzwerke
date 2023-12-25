@@ -1,5 +1,6 @@
 package edu.fra.uas.interiorsensors.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -31,7 +32,10 @@ public class ValueMeasure {
 
     @Column(name = "value")
     private double value;
+    @Column(name = "read_at")
+    private LocalDateTime readAt;
 
+    @JsonIgnore
     @ManyToOne(targetEntity = Sensor.class)
     @JoinColumn(name = "sensor_id")
     private Sensor sensor;
