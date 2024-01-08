@@ -4,9 +4,6 @@ import {HttpClient} from "@angular/common/http";
 import {Room} from "../../dashboard/common/room";
 import {environment} from "../../../environments/environment";
 
-class HttpService {
-}
-
 @Injectable({
   providedIn: 'root',
 })

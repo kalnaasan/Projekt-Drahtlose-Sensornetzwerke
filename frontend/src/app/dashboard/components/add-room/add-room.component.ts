@@ -2,16 +2,15 @@ import { Component, OnInit } from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {SensorService} from "../../../shared/services/sensor-service";
 import {Sensor} from "../../common/sensor";
-import {MatDialog, MatDialogRef} from "@angular/material/dialog";
 import {Room} from "../../common/room";
 import {RoomService} from "../../../shared/services/RoomService";
 
 @Component({
   selector: 'app-add-room-dialogg',
-  templateUrl: './add-room-dialogg.component.html',
-  styleUrls: ['./add-room-dialogg.component.scss']
+  templateUrl: './add-room.component.html',
+  styleUrls: ['./add-room.component.scss']
 })
-export class AddRoomDialoggComponent implements OnInit {
+export class AddRoomComponent implements OnInit {
   public roomForm!: FormGroup;
   public sensors: Sensor[] = [];
   public selectedSensors: Sensor[] = [];
@@ -21,7 +20,6 @@ export class AddRoomDialoggComponent implements OnInit {
 
   constructor(private sensorService: SensorService,
               private formBuilder: FormBuilder,
-              private dialog: MatDialog,
               private roomService: RoomService
   ) {
 

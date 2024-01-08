@@ -11,7 +11,7 @@ import {MatButtonModule} from "@angular/material/button";
 import {MatSelectModule} from "@angular/material/select";
 import {MatOptionModule} from '@angular/material/core';
 import {NgMultiSelectDropDownModule} from 'ng-multiselect-dropdown';
-import {AddRoomDialoggComponent} from './components/add-room-dialogg/add-room-dialogg.component';
+import {AddRoomComponent} from './components/add-room/add-room.component';
 import {HomeComponent} from './components/home/home.component';
 import {SharedModule} from "../shared/shared.module";
 import {NgForOf, NgIf} from "@angular/common";
@@ -25,7 +25,7 @@ import {RoomComponent} from './components/room/room.component';
     SensorsComponent,
     AppComponent,
     DataViewComponent,
-    AddRoomDialoggComponent,
+    AddRoomComponent,
 
   ],
   exports: [
