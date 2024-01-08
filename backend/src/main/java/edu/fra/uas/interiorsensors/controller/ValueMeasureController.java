@@ -34,7 +34,7 @@ public class ValueMeasureController {
         log.debug("Indexing ValueMeasure : {}", this.valueMeasureRepository.count());
         LocalDateTime fromDate = LocalDateTime.parse(from + "T00:00:00");
         LocalDateTime toDate = LocalDateTime.parse(to + "T23:59:59");
-        List<ValueMeasure> values = valueMeasureRepository.findAllBySensor_NameAndReadAtBetweenOrderByCreatedAtAsc(sensorName, fromDate, toDate);
+        List<ValueMeasure> values = valueMeasureRepository.findAllBySensor_NameAndReadAtBetweenOrderByReadAtAsc(sensorName, fromDate, toDate);
         return this.message("Indexing Values", values, HttpStatus.OK);
     }
 

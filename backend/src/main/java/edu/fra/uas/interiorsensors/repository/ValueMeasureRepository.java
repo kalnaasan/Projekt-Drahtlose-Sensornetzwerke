@@ -12,5 +12,5 @@ import java.util.UUID;
 public interface ValueMeasureRepository extends JpaRepository<ValueMeasure, UUID> {
     boolean existsByValue(double value);
 
-    List<ValueMeasure> findAllBySensor_NameAndReadAtBetweenOrderByCreatedAtAsc(String sensor_name, LocalDateTime start, LocalDateTime end);
+    List<ValueMeasure> findAllBySensor_NameAndReadAtBetweenOrderByReadAtAsc(String sensor_name, LocalDateTime start, LocalDateTime end);
 }
