@@ -3,8 +3,10 @@ package edu.fra.uas.interiorsensors.controller;
 
 import edu.fra.uas.interiorsensors.common.ResponseMessage;
 import edu.fra.uas.interiorsensors.model.Room;
+import edu.fra.uas.interiorsensors.model.Sensor;
 import edu.fra.uas.interiorsensors.repository.RoomRepository;
 
+import edu.fra.uas.interiorsensors.repository.SensorRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
@@ -31,10 +33,11 @@ import java.util.UUID;
 public class RoomController implements BaseController<Room> {
 
     private final RoomRepository roomRepository;
-
+    private final SensorRepository sensorRepository;
     @Autowired
-    public RoomController(RoomRepository roomRepository) {
+    public RoomController(RoomRepository roomRepository, SensorRepository sensorRepository) {
         this.roomRepository = roomRepository;
+        this.sensorRepository = sensorRepository;
     }
 
     @GetMapping
@@ -65,6 +68,10 @@ public class RoomController implements BaseController<Room> {
             return this.message("Room is already exists", null, HttpStatus.CONFLICT);
         }
         Room roomCreated = this.roomRepository.save(room);
+        for (Sensor sensor: room.getSensors()) {
+            sensor.setRoom(roomCreated);
+            this.sensorRepository.save(sensor);
+        }
         return this.message("Created Room", roomCreated, HttpStatus.CREATED);
     }
 

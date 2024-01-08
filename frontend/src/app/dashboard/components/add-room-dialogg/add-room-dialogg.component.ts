@@ -19,12 +19,11 @@ export class AddRoomDialoggComponent implements OnInit {
 
   public isDialogVisible: boolean = true;
 
-
   constructor(private sensorService: SensorService,
               private formBuilder: FormBuilder,
               private dialog: MatDialog,
               private roomService: RoomService
-            ) {
+  ) {
 
     this.roomForm=this.formBuilder.group({
       sensor:['', [Validators.required]],
@@ -42,6 +41,10 @@ export class AddRoomDialoggComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.loadAvailableSensors();
+  }
+
+  loadAvailableSensors(): void {
     this.sensorService.getAllSensors().subscribe(
       (res: any) => {
         this.sensors = res.data;
@@ -56,16 +59,13 @@ export class AddRoomDialoggComponent implements OnInit {
   }
 
   cancel(): void {
-    document.location.href='/dashboard/dataView';
+    document.location.href = '/dashboard/dataView';
   }
-
   onSubmit(): void {
     if (this.roomForm.valid) {
-      // Retrieve the form values
       const roomName = this.roomForm.get('roomName')?.value;
       const selectedSensors:Sensor[] = this.roomForm.get('sensor')?.value;
 
-      // Perform actions related to form submission (e.g., sending data to the server)
       console.log('Room Name:', roomName);
       console.log('Selected Sensors:', selectedSensors);
 
@@ -88,4 +88,5 @@ export class AddRoomDialoggComponent implements OnInit {
       this.isDialogVisible = false;
     }
   }
+
 }

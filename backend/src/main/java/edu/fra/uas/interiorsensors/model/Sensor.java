@@ -43,7 +43,7 @@ public class Sensor {
     private String type;
 
     @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY ,cascade = CascadeType.MERGE)
     @JoinColumn(name = "room_id")
     private Room room;
 
