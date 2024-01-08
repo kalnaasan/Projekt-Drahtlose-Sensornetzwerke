@@ -13,6 +13,7 @@ public interface SensorRepository extends JpaRepository<Sensor, UUID> {
     Optional<Sensor> findByName(String name);
 
     List<Sensor> findAllByRoom_Id(UUID roomId);
+    List<Sensor> findAllByRoomIsNull();
 
     boolean existsByName(String name);
 }
