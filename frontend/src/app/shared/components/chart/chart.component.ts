@@ -98,11 +98,12 @@ export class ChartComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.apiService.getValueBySensorTypeAndDate(this.nameChart, '2024-01-08', '2024-01-08').subscribe({
+    const from = this.convertNumberToDate(this.updateOptionsData[this.activeOptionButton].min);
+    const to = this.convertNumberToDate(this.updateOptionsData[this.activeOptionButton].max);
+    this.apiService.getValueBySensorTypeAndDate(this.nameChart, from, to).subscribe({
       next: (res: any) => {
         this.data = this.convertDataToChartData(res.data);
-        console.log(this.data);
-        this.xaxis = this.updateOptionsData['today'];
+        this.xaxis = this.updateOptionsData[this.activeOptionButton];
         this.series = [{
           name: this.nameChart,
           data: this.data
@@ -121,30 +122,19 @@ export class ChartComponent implements OnInit {
     this.xaxis = this.updateOptionsData[option];
   }
 
-  private getStartCurrentMonth() {
-    // Erstelle ein Date-Objekt für den aktuellen Zeitpunkt
-    const currentDate = new Date();
-
-    // Hole den Monat (Monate starten bei 0, also addiere 1)
-    const currentMonth = currentDate.getMonth() + 1;
-    const currentYear = currentDate.getFullYear();
-
-    return '01.' + currentMonth + '.' + currentYear;
-  }
-
-  private getLastDayOfMonth() {
-    // Erstelle ein Date-Objekt für den ersten Tag des nächsten Monats
-    const nextMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
-
-    // Subtrahiere einen Tag, um zum letzten Tag des aktuellen Monats zu gelangen
-    const lastDay = new Date(nextMonth.getTime() - 86400000);
-
-    // Formatiere den letzten Tag im gewünschten Format
-    return `${lastDay.getDate()}.${lastDay.getMonth() + 1}.${lastDay.getFullYear()}`;
-  }
-
   private convertDataToChartData(src: ValueMeasure[]) {
     return src.map((valueMeasure: ValueMeasure) => [Date.parse(valueMeasure.readAt), valueMeasure.value]);
-    // return src.map(({readAt, value}) => [Date.parse(readAt), value]);
+  }
+
+  private convertNumberToDate(value: any) {
+    let d = new Date(value),
+      month = '' + (d.getMonth() + 1),
+      day = '' + d.getDate(),
+      year = d.getFullYear();
+
+    month = (month.length < 2) ? '0' + month : month;
+    day = (day.length < 2) ? '0' + day : day;
+
+    return [year, month, day].join('-');
   }
 }
