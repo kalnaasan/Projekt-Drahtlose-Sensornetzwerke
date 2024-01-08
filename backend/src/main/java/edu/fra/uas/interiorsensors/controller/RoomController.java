@@ -7,6 +7,7 @@ import edu.fra.uas.interiorsensors.repository.RoomRepository;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -40,7 +41,7 @@ public class RoomController implements BaseController<Room> {
     @Override
     public ResponseEntity<ResponseMessage> index() {
         log.debug("Indexing Room : {}", this.roomRepository);
-        List<Room> rooms = roomRepository.findAll();
+        List<Room> rooms = roomRepository.findAllByOrderByNameAsc();
         return this.message("Indexing Room", rooms, HttpStatus.OK);
     }
 
