@@ -1,0 +1,14 @@
+<div class="pt-2" *ngIf="series.length > 0">
+  <button class="mt-2" (click)="updateOptions( 'today' )" [class.active]="activeOptionButton=='today'">Today</button>
+  <apx-chart
+    [series]="series"
+    [dataLabels]="dataLabels"
+    [xaxis]="xaxis"
+    [title]="title"
+    [chart]="chart"
+    [markers]="markers"
+    [tooltip]="tooltip"
+    [annotations]="annotations"
+    [fill]="fill">
+  </apx-chart>
+</div>
