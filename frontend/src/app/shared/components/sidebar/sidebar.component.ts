@@ -1,7 +1,7 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {RouteItem} from "../../common/route-item";
 import {Router} from "@angular/router";
-import {HttpClient} from "@angular/common/http";
+import {RoomService} from "../../services/RoomService";
 
 @Component({
   selector: 'app-sidebar',
@@ -15,11 +15,11 @@ export class SidebarComponent implements OnInit {
   public routeItems: RouteItem[] = new Array<RouteItem>();
 
   constructor(private router: Router,
-              private http: HttpClient) {
+              private roomService: RoomService) {
   }
 
   ngOnInit(): void {
-    this.http.get<any>('http://localhost:8080/api/v1/web/rooms').subscribe({
+    this.roomService.getAllRooms().subscribe({
       next: (res: any) => {
         for (const item of res.data) {
           const routeItem: RouteItem = {
