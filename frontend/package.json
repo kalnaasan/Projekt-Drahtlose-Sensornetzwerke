@@ -23,6 +23,7 @@
     "apexcharts": "^3.45.0",
     "bootstrap": "^5.3.2",
     "boxicons": "^2.1.4",
+    "ng-multiselect-dropdown": "^1.0.0",
     "ng-apexcharts": "^1.8.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",

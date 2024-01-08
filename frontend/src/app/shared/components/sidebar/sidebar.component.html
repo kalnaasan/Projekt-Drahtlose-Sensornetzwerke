@@ -12,9 +12,10 @@
     <div class="bottom-button-container mt-auto">
       <button class="btn btn-primary btn-fixed-width" (click)="addNewRaum()">Add new Room</button>
     </div>
-
   </mat-drawer>
   <mat-drawer-content class="content">
-    <router-outlet></router-outlet>
+    <div class="ms-3">
+      <router-outlet></router-outlet>
+    </div>
   </mat-drawer-content>
 </mat-drawer-container>

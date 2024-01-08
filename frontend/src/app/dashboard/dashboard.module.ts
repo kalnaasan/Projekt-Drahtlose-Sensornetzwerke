@@ -1,12 +1,17 @@
 import {NgModule} from '@angular/core';
+import {SensorsComponent} from "./components/sensors/sensors.component";
 import {MatCardModule} from "@angular/material/card";
-import {ReactiveFormsModule} from "@angular/forms";
+import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import {MatDialogModule} from "@angular/material/dialog";
 import {MatInputModule} from "@angular/material/input";
 import {DashboardRoutingModule} from "./dashboard-routing.module";
+import {AppComponent} from './components/app/app.component';
+import {DataViewComponent} from './components/data-view/data-view.component';
 import {MatButtonModule} from "@angular/material/button";
 import {MatSelectModule} from "@angular/material/select";
 import {MatOptionModule} from '@angular/material/core';
+import {NgMultiSelectDropDownModule} from 'ng-multiselect-dropdown';
+import {AddRoomDialoggComponent} from './components/add-room-dialogg/add-room-dialogg.component';
 import {HomeComponent} from './components/home/home.component';
 import {SharedModule} from "../shared/shared.module";
 import {NgForOf, NgIf} from "@angular/common";
@@ -17,8 +22,16 @@ import {RoomComponent} from './components/room/room.component';
   declarations: [
     HomeComponent,
     RoomComponent,
+    SensorsComponent,
+    AppComponent,
+    DataViewComponent,
+    AddRoomDialoggComponent,
+
   ],
-  exports: [],
+  exports: [
+    SensorsComponent,
+    DataViewComponent
+  ],
   imports: [
     DashboardRoutingModule,
     MatCardModule,
@@ -26,11 +39,16 @@ import {RoomComponent} from './components/room/room.component';
     MatDialogModule,
     MatInputModule,
     MatButtonModule,
+    NgMultiSelectDropDownModule.forRoot(),
     MatSelectModule,
     MatOptionModule,
     SharedModule,
     NgForOf,
     NgIf,
+    FormsModule,
+    NgIf,
+    NgForOf,
+
   ]
 })
 export class DashboardModule {
