@@ -77,14 +77,13 @@ export class AddRoomDialoggComponent implements OnInit {
       this.roomService.createRoom(room).subscribe(
         (res: any) => {
           console.log(res.message);
+          this.roomForm.get('roomName')?.setValue("");
+          this.roomForm.get('sensor')?.setValue([]);
+
+          document.location.href='/home';
         },
         (err: any) => console.log(err.error)
       );// Close the dialog after successful submission
-
-      this.roomForm.get('roomName')?.setValue("");
-      this.roomForm.get('sensor')?.setValue([]);
-
-      document.location.href='/dashboard/dataView';
 
       this.isDialogVisible = false;
     }
