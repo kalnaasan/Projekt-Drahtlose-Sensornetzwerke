@@ -1,10 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
-import {SensorService} from "../../service/sensor-service";
+import {SensorService} from "../../../shared/services/sensor-service";
 import {Sensor} from "../../common/sensor";
 import {MatDialog, MatDialogRef} from "@angular/material/dialog";
 import {Room} from "../../common/room";
-import {RoomService} from "../../service/RoomService";
+import {RoomService} from "../../../shared/services/RoomService";
 
 @Component({
   selector: 'app-add-room-dialogg',

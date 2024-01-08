@@ -1,7 +1,8 @@
 import {Injectable} from "@angular/core";
 import {Observable} from "rxjs";
 import {HttpClient} from "@angular/common/http";
-import {Room} from "../common/room";
+import {Room} from "../../dashboard/common/room";
+import {environment} from "../../../environments/environment";
 
 class HttpService {
 }
@@ -10,8 +11,10 @@ class HttpService {
   providedIn: 'root',
 })
 export class RoomService {
-  private apiUrl = 'http://localhost:8080/api/v1/web/rooms';
-  constructor(private http: HttpClient) {}
+  private apiUrl = environment.SERVER_URL + '/api/v1/web/rooms';
+
+  constructor(private http: HttpClient) {
+  }
 
   getAllRooms(): Observable<Room[]> {
     return this.http.get<Room[]>(this.apiUrl);
