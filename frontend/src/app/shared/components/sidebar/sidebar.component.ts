@@ -2,6 +2,9 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { RouteItem } from "../../common/route-item";
 import { Router } from "@angular/router";
+import {RoomService} from "../../../dashboard/service/RoomService";
+import {Sensor} from "../../../dashboard/common/sensor";
+import {Room} from "../../../dashboard/common/room";
 
 @Component({
   selector: 'app-sidebar',
@@ -13,12 +16,21 @@ export class SidebarComponent implements OnInit {
   @Input()
   public sideBarOpen = true;
   public routeItems: RouteItem[] = new Array<RouteItem>();
+  public rooms: Room[] = [];
 
-  constructor(private router: Router) {
+
+  constructor(private router: Router,
+              private roomService: RoomService) {
   }
 
   ngOnInit(): void {
-    // You can populate routeItems here if needed
+    this.roomService.getAllRooms().subscribe(
+      (res: any) => {
+        this.rooms = res.data;
+        console.log(this.rooms);
+      },
+      (err: any) => console.log(err.error)
+    );
   }
 
   goToSensor() {
@@ -29,4 +41,6 @@ export class SidebarComponent implements OnInit {
   addNewRaum() {
     this.router.navigate(['dashboard/rooms1']);
   }
+
+
 }

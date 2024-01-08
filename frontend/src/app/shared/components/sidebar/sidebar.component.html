@@ -9,27 +9,17 @@
       </li>
     </ul>
 
-    <!-- Feste Größe für die Buttons -->
-    <div class="bottom-button-container">
-      <button class="btn btn-primary btn-fixed-width" (click)="goToSensor()">Room 1</button>
-    </div>
+    <!-- Dynamic buttons for each room -->
+    <ng-container *ngFor="let room of rooms">
+      <div class="bottom-button-container">
+        <button class="btn btn-primary btn-fixed-width" (click)="goToSensor()">{{ room.name }}</button>
+      </div>
+    </ng-container>
 
-    <div class="bottom-button-container">
-      <button class="btn btn-primary btn-fixed-width">Room 2</button>
-    </div>
-
-    <div class="bottom-button-container">
-      <button class="btn btn-primary btn-fixed-width">Room 3</button>
-    </div>
-
-    <div class="bottom-button-container">
-      <button class="btn btn-primary btn-fixed-width">Room 4</button>
-    </div>
-
+    <!-- Add new Room button -->
     <div class="bottom-button-container mt-auto">
       <button class="btn btn-primary btn-fixed-width" (click)="addNewRaum()">Add new Room</button>
     </div>
-
   </mat-drawer>
   <mat-drawer-content class="content">
     <div class="ms-3">
