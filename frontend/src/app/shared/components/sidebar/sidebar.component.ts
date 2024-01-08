@@ -1,7 +1,7 @@
-// sidebar.component.ts
-import { Component, Input, OnInit } from '@angular/core';
-import { RouteItem } from "../../common/route-item";
-import { Router } from "@angular/router";
+import {Component, Input, OnInit} from '@angular/core';
+import {RouteItem} from "../../common/route-item";
+import {Router} from "@angular/router";
+import {HttpClient} from "@angular/common/http";
 
 @Component({
   selector: 'app-sidebar',
@@ -14,19 +14,28 @@ export class SidebarComponent implements OnInit {
   public sideBarOpen = true;
   public routeItems: RouteItem[] = new Array<RouteItem>();
 
-  constructor(private router: Router) {
+  constructor(private router: Router,
+              private http: HttpClient) {
   }
 
   ngOnInit(): void {
-    // You can populate routeItems here if needed
-  }
-
-  goToSensor() {
-    // Use the Router to navigate to the 'shared/sensors' route
-    this.router.navigate(['/sensors']);
+    this.http.get<any>('http://localhost:8080/api/v1/web/rooms').subscribe({
+      next: (res: any) => {
+        for (const item of res.data) {
+          const routeItem: RouteItem = {
+            name: item.name,
+            link: '/rooms/' + item.id,
+            icon: 'room'
+          }
+          this.routeItems.push(routeItem);
+        }
+      },
+      error: (err: any) => console.log(err)
+    });
   }
 
   addNewRaum() {
-    this.router.navigate(['/rooms']);
+    this.router.navigate(['/rooms']).then(() => {
+    });
   }
 }
