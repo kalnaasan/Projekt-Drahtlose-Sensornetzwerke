@@ -73,7 +73,7 @@ public class initDB {
         for (int i = 0; i < 720; i++) {
             // Generiere eine Zufallszahl im Bereich [minValue, maxValue)
             double randomDouble = Math.round((minValue + (maxValue - minValue) * random.nextDouble()) * 100.0) / 100.0;
-            LocalDateTime created = LocalDateTime.of(2023, 12, 2 + i / 24, i % 24, 0);
+            LocalDateTime created = LocalDateTime.of(2024, 1, 2 + i / 24, i % 24, 0);
             ValueMeasure valueMeasure = new ValueMeasure(null, randomDouble, created, sensor, created, created);
             this.valueMeasureRepository.save(valueMeasure);
         }
@@ -88,7 +88,7 @@ public class initDB {
         for (int i = 0; i < 720; i++) {
             // Generiere eine Zufallszahl im Bereich [minValue, maxValue)
             int randomInteger = random.nextInt((maxValue - minValue) + 1) + minValue;
-            LocalDateTime created = LocalDateTime.of(2023, 12, 2 + i / 24, i % 24, 0);
+            LocalDateTime created = LocalDateTime.of(2024, 1, 2 + i / 24, i % 24, 0);
             ValueMeasure valueMeasure = new ValueMeasure(null, randomInteger, created, sensor, created, created);
             this.valueMeasureRepository.save(valueMeasure);
         }
@@ -103,7 +103,7 @@ public class initDB {
         for (int i = 0; i < 720; i++) {
             // Generiere eine Zufallszahl im Bereich [minValue, maxValue)
             int randomInteger = random.nextInt((maxValue - minValue) + 1) + minValue;
-            LocalDateTime created = LocalDateTime.of(2023, 12, 2 + i / 24, i % 24, 0);
+            LocalDateTime created = LocalDateTime.of(2024, 1, 2 + i / 24, i % 24, 0);
             ValueMeasure valueMeasure = new ValueMeasure(null, randomInteger, created, sensor, created, created);
             this.valueMeasureRepository.save(valueMeasure);
         }
@@ -117,7 +117,7 @@ public class initDB {
         for (int i = 0; i < 720; i++) {
             // Generiere eine Zufallszahl im Bereich [minValue, maxValue)
             int randomInteger = random.nextInt((maxValue - minValue) + 1) + minValue;
-            LocalDateTime created = LocalDateTime.of(2023, 12, 2 + i / 24, i % 24, 0);
+            LocalDateTime created = LocalDateTime.of(2024, 1, 2 + i / 24, i % 24, 0);
             ValueMeasure valueMeasure = new ValueMeasure(null, randomInteger, created, sensor, created, created);
             this.valueMeasureRepository.save(valueMeasure);
         }
