@@ -1,26 +1,17 @@
-import { NgModule } from '@angular/core';
-import { RouterModule, Routes } from '@angular/router';
-import {SensorsComponent} from "./components/sensors/sensors.component";
-import {DataViewComponent} from "./components/data-view/data-view.component";
-import {AddRoomDialogComponent} from "./components/add-room-dialog/add-room-dialog.component";
-import {AddRoomDialoggComponent} from "./components/add-room-dialogg/add-room-dialogg.component";
-import {AppComponent} from "./components/app/app.component";
+import {NgModule} from '@angular/core';
+import {RouterModule, Routes} from '@angular/router';
+import {HomeComponent} from './components/home/home.component';
+import {RoomComponent} from "./components/room/room.component";
 
 const routes: Routes = [
-  {
-    path: '',
-    component:AppComponent,
-    children:[
-      {path:"sensors" ,component: SensorsComponent,pathMatch:'full'},
-      {path:"dataView" ,component:DataViewComponent,pathMatch:'full'},
-      {path:"rooms" ,component:AddRoomDialogComponent,pathMatch :'full'},
-      {path:"rooms1" ,component:AddRoomDialoggComponent,pathMatch :'full'}
-    ]
-  }
+  {path: 'home', component: HomeComponent, pathMatch: 'full'},
+  {path: 'rooms/:id', component: RoomComponent, pathMatch: 'full'},
+  {path: '', redirectTo: 'home', pathMatch: 'full'},
 ];
 
 @NgModule({
   imports: [RouterModule.forChild(routes)],
   exports: [RouterModule]
 })
-export class DashboardRoutingModule { }
+export class DashboardRoutingModule {
+}
