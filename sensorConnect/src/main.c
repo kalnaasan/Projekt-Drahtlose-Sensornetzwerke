@@ -9,7 +9,27 @@
 #define SLEEP_TIME_MS 1000
 #define TEXTBUFFER_SIZE 256
 
+#define COAP_PORT 5683
+
 /* CoAP Module */
+/* Thread multicast mesh local address */
+static struct sockaddr_in6 multicast_local_addr = {
+	.sin6_family = AF_INET6,
+	.sin6_port = htons(COAP_PORT),
+	.sin6_addr.s6_addr = { 0xff, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+			       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 },
+	.sin6_scope_id = 0U
+};
+
+/* Variable for storing server address acquiring in provisioning handshake 
+static char unique_local_addr_str[INET6_ADDRSTRLEN];
+static struct sockaddr_in6 unique_local_addr = {
+	.sin6_family = AF_INET6,
+	.sin6_port = htons(COAP_PORT),
+	.sin6_addr.s6_addr = {0xfd, 0x00, 0x00, 0x00, 0xfb, 0x01, 0x00, 0x01, "192.168.02"},
+	.sin6_scope_id = 0U
+};
+*/
 static void coap_send_data_request(void);
 static void coap_send_data_response_cb(void * p_context, otMessage * p_message,
 										const otMessageInfo * p_message_info, otError result);
@@ -38,7 +58,7 @@ void main(void){
 	
 	coap_init();
 	
-	k_msleep(5000); // for safety
+	k_msleep(SLEEP_TIME_MS); // for safety
 	
 	while(1) {
 		/* Read Measurement */
