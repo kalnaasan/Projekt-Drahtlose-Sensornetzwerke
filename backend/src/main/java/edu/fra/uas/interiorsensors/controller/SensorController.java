@@ -22,7 +22,7 @@ import java.util.UUID;
 @CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("sensors")
-public class SensorController implements BaseController<Sensor> {
+public class SensorController {
 
     private final SensorRepository sensorRepository;
     private final ValueMeasureRepository valueMeasureRepository;
@@ -34,15 +34,17 @@ public class SensorController implements BaseController<Sensor> {
     }
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    @Override
-    public ResponseEntity<ResponseMessage> index() {
+    public ResponseEntity<ResponseMessage> index(@RequestParam(value = "room-id", defaultValue = "null") String roomId) {
         log.debug("Indexing Sensor : {}", this.sensorRepository.count());
+        if (!roomId.equals("null")) {
+            List<Sensor> sensors = this.sensorRepository.findAllByRoom_Id(UUID.fromString(roomId));
+            return this.message("Indexing Sensor", sensors, HttpStatus.OK);
+        }
         List<Sensor> sensors = this.sensorRepository.findAll();
         return this.message("Indexing Sensor", sensors, HttpStatus.OK);
     }
 
     @GetMapping("/{id}")
-    @Override
     public ResponseEntity<ResponseMessage> getById(@PathVariable UUID id) {
         log.debug("Getting Sensor by id: {} ", id);
         Optional<Sensor> optionalSensor = this.sensorRepository.findById(id);
@@ -52,7 +54,6 @@ public class SensorController implements BaseController<Sensor> {
     }
 
     @PostMapping
-    @Override
     public ResponseEntity<ResponseMessage> create(@RequestBody Sensor sensor) {
         log.debug("create sensor: {}", sensor);
         Optional<Sensor> optionalSensor = (sensor.getId() != null) ? this.sensorRepository.findById(sensor.getId()) : Optional.empty();
@@ -65,7 +66,6 @@ public class SensorController implements BaseController<Sensor> {
     }
 
     @PutMapping("/{id}")
-    @Override
     public ResponseEntity<ResponseMessage> update(@PathVariable("id") UUID id, @RequestBody Sensor sensor) {
         log.debug("Updating Sensor by id: {}", id);
         Optional<Sensor> optionalSensor = this.sensorRepository.findById(id);
@@ -79,7 +79,6 @@ public class SensorController implements BaseController<Sensor> {
     }
 
     @DeleteMapping("/{id}")
-    @Override
     public ResponseEntity<ResponseMessage> delete(@PathVariable("id") UUID id) {
         log.debug("Deleting Sensor by id: {}", id);
         Optional<Sensor> sensorUpdate = this.sensorRepository.findById(id);
