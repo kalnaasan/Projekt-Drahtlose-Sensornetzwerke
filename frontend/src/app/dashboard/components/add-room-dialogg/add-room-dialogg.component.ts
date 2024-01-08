@@ -3,6 +3,8 @@ import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {SensorService} from "../../service/sensor-service";
 import {Sensor} from "../../common/sensor";
 import {MatDialog, MatDialogRef} from "@angular/material/dialog";
+import {Room} from "../../common/room";
+import {RoomService} from "../../service/RoomService";
 
 @Component({
   selector: 'app-add-room-dialogg',
@@ -20,7 +22,8 @@ export class AddRoomDialoggComponent implements OnInit {
 
   constructor(private sensorService: SensorService,
               private formBuilder: FormBuilder,
-              private dialog: MatDialog
+              private dialog: MatDialog,
+              private roomService: RoomService
             ) {
 
     this.roomForm=this.formBuilder.group({
@@ -53,22 +56,36 @@ export class AddRoomDialoggComponent implements OnInit {
   }
 
   cancel(): void {
-    // Set the visibility to false to hide the dialog
-    const dialogRef = this.dialog.open(AddRoomDialoggComponent);
-    dialogRef.close();
+    document.location.href='/dashboard/dataView';
   }
 
   onSubmit(): void {
     if (this.roomForm.valid) {
       // Retrieve the form values
       const roomName = this.roomForm.get('roomName')?.value;
-      const selectedSensors = this.roomForm.get('sensor')?.value;
+      const selectedSensors:Sensor[] = this.roomForm.get('sensor')?.value;
 
       // Perform actions related to form submission (e.g., sending data to the server)
       console.log('Room Name:', roomName);
       console.log('Selected Sensors:', selectedSensors);
 
-      // Close the dialog after successful submission
+      const room: Room = {
+        id: '',
+        name: roomName,
+        sensors: selectedSensors
+      }
+      this.roomService.createRoom(room).subscribe(
+        (res: any) => {
+          console.log(res.message);
+        },
+        (err: any) => console.log(err.error)
+      );// Close the dialog after successful submission
+
+      this.roomForm.get('roomName')?.setValue("");
+      this.roomForm.get('sensor')?.setValue([]);
+
+      document.location.href='/dashboard/dataView';
+
       this.isDialogVisible = false;
     }
   }
