@@ -1,5 +1,15 @@
 <div class="pt-2" *ngIf="series.length > 0">
   <button class="mt-2" (click)="updateOptions( 'today' )" [class.active]="activeOptionButton=='today'">Today</button>
+  <button class="mt-2 mx-1 bg-info p-1">{{averageValues}}
+    <span *ngIf="nameChart.includes('CO2')" >PPM</span>
+    <span *ngIf="nameChart.includes('HM')" >%</span>
+    <span *ngIf="nameChart.includes('TEMP')" >°C</span>
+    <span *ngIf="nameChart.includes('VOC')" >index</span>
+  </button>
+  <button [className]="(averageValues < minValue || averageValues > maxValue)  ? 'mt-2 mx-1 bg-danger float-end btn-circle' : 'mt-2 mx-1 bg-danger-subtle float-end btn-circle'"></button>
+  <button [className]="((averageValues >= minValue && averageValues < minNormalValue) || (averageValues >= maxNormalValue && averageValues <= maxValue))  ? 'mt-2 mx-1 bg-warning float-end btn-circle' : 'mt-2 mx-1 bg-warning-subtle float-end btn-circle'"></button>
+  <button [className]="(averageValues >= minNormalValue && averageValues <= maxNormalValue)  ? 'mt-2 mx-1 bg-success float-end btn-circle' : 'mt-2 mx-1 bg-success-subtle float-end btn-circle'"></button>
+
   <apx-chart
     [series]="series"
     [dataLabels]="dataLabels"
@@ -8,7 +18,7 @@
     [chart]="chart"
     [markers]="markers"
     [tooltip]="tooltip"
-    [annotations]="annotations"
     [fill]="fill">
   </apx-chart>
+  <!--    [annotations]="annotations"-->
 </div>

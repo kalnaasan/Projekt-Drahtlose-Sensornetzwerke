@@ -1,4 +1,4 @@
-button {
+button, status {
   background: #fff;
   color: #222;
   border: 1px solid #e7e7e7;
@@ -16,4 +16,14 @@ button.active {
 
 button:focus {
   outline: 0;
+}
+
+.btn-circle {
+  width: 35px;
+  height: 35px;
+  text-align: center;
+  padding: 0; // changed
+  font-size: 12px;
+  line-height: 1.428571429;
+  border-radius: 20px;
 }

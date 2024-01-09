@@ -22,8 +22,13 @@ import {ApiService} from "../../services/api.service";
 export class ChartComponent implements OnInit {
   @Input() nameChart: any;
   @Input() srcData: any;
-  data: any;
+  public data: any;
+  public averageValues: number = 0;
   public activeOptionButton = 'today';
+  public minValue = 0;
+  public minNormalValue = 0
+  public maxNormalValue = 0
+  public maxValue = 0;
   series: ApexAxisChartSeries | ApexNonAxisChartSeries = [];
   title: ApexTitleSubtitle = {};
   chart: ApexChart = {
@@ -93,6 +98,7 @@ export class ChartComponent implements OnInit {
       tickAmount: 6
     }
   };
+  activeStatusOption: string = 'active';
 
   constructor(private apiService: ApiService) {
   }
@@ -108,7 +114,31 @@ export class ChartComponent implements OnInit {
           name: this.nameChart,
           data: this.data
         }];
-
+        this.averageValues = Math.round(this.calculateAverage());
+        if (this.nameChart.includes("TEMP")){
+          // 16 - 18 - 24 - 26
+        this.minValue = 16;
+        this.minNormalValue = 18
+        this.maxNormalValue = 24
+        this.maxValue = 26;
+        } else if (this.nameChart.includes('HM')){
+          this.minValue = 30;
+          this.minNormalValue = 40
+          this.maxNormalValue = 60
+          this.maxValue = 70;
+        } else if (this.nameChart.includes('VOC')){
+          // 50 - 51 - 100
+          this.minValue = 0;
+          this.minNormalValue = 0
+          this.maxNormalValue = 50
+          this.maxValue = 100;
+        } else if (this.nameChart.includes('CO2')){
+          // 1000 - 1001 - 2000 -
+          this.minValue = 0;
+          this.minNormalValue = 0
+          this.maxNormalValue = 1000
+          this.maxValue = 2000;
+        }
         this.title = {
           text: this.nameChart
         };
@@ -136,5 +166,13 @@ export class ChartComponent implements OnInit {
     day = (day.length < 2) ? '0' + day : day;
 
     return [year, month, day].join('-');
+  }
+
+  public calculateAverage(): number {
+    let sum = 0;
+    for (let i = 0; i < this.data.length; i++) {
+      sum += this.data[i][1];
+    }
+    return sum / this.data.length;
   }
 }
