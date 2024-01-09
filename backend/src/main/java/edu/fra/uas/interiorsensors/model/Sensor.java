@@ -43,11 +43,12 @@ public class Sensor {
     private String type;
 
     @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY ,cascade = CascadeType.MERGE)
+    @ManyToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name = "room_id")
     private Room room;
 
-    @OneToMany(mappedBy = "sensor", cascade = CascadeType.MERGE)
+    @JsonIgnore
+    @OneToMany(mappedBy = "sensor")
     private List<ValueMeasure> valueMeasures;
 
     @CreationTimestamp
