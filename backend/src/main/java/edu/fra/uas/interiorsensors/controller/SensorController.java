@@ -37,7 +37,7 @@ public class SensorController {
     public ResponseEntity<ResponseMessage> index(@RequestParam(value = "room-id", defaultValue = "null") String roomId) {
         log.debug("Indexing Sensor : {}", this.sensorRepository.count());
         if (!roomId.equals("null")) {
-            List<Sensor> sensors = this.sensorRepository.findAllByRoom_Id(UUID.fromString(roomId));
+            List<Sensor> sensors = this.sensorRepository.findAllByRoom_IdOrderByName(UUID.fromString(roomId));
             return this.message("Indexing Sensor", sensors, HttpStatus.OK);
         }
         List<Sensor> sensors = this.sensorRepository.findAllByRoomIsNull();
