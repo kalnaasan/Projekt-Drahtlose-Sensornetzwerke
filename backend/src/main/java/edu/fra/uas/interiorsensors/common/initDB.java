@@ -31,37 +31,29 @@ public class initDB {
     @PostConstruct
     private void init() {
         Room room1 = this.roomRepository.save(new Room(null, "Room 1", new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
+        this.genrateSensorsOfRoom(room1, "123456");
         Room room2 = this.roomRepository.save(new Room(null, "Room 2", new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
+        this.genrateSensorsOfRoom(room2, "456789");
         Room room3 = this.roomRepository.save(new Room(null, "Room 3", new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
+        this.genrateSensorsOfRoom(room3, "789123");
         Room room4 = this.roomRepository.save(new Room(null, "Room 4", new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
+        this.genrateSensorsOfRoom(room4, "147258");
 
-        Sensor SD41_TEMP_123456 = this.sensorRepository.save(new Sensor(null, "123456_SD41_TEMP", "TEMP", room1, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
-        this.genrateTemperatureValues(SD41_TEMP_123456);
-        Sensor SD41_CO2_123456 = this.sensorRepository.save(new Sensor(null, "123456_SD41_CO2", "CO2", room1, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
-        this.genrateCO2Values(SD41_CO2_123456);
-        Sensor SD41_HM_123456 = this.sensorRepository.save(new Sensor(null, "123456_SD41_HM", "HM", room1, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
-        this.genrateHumidityValues(SD41_HM_123456);
-        Sensor SD41_VOC_123456 = this.sensorRepository.save(new Sensor(null, "123456_SD41_VOC", "VOC", room1, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
-        this.genrateVOCValues(SD41_VOC_123456);
+        this.sensorRepository.save(new Sensor(null, "369258_SD41_TEMP", "TEMP", null, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
+        this.sensorRepository.save(new Sensor(null, "369258_SD41_CO2", "CO2", null, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
+        this.sensorRepository.save(new Sensor(null, "369258_SD41_HM", "HM", null, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
+        this.sensorRepository.save(new Sensor(null, "369258_SD41_VOC", "VOC", null, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
+    }
 
-        Sensor SD41_TEMP_587456 = this.sensorRepository.save(new Sensor(null, "587456_SD41_TEMP", "TEMP", null, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
-        this.genrateTemperatureValues(SD41_TEMP_587456);
-        Sensor SD41_CO2_587456 = this.sensorRepository.save(new Sensor(null, "587456_SD41_CO2", "CO2", null, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
-        this.genrateCO2Values(SD41_CO2_587456);
-        Sensor SD41_HM_587456 = this.sensorRepository.save(new Sensor(null, "587456_SD41_HM", "HM", null, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
-        this.genrateHumidityValues(SD41_HM_587456);
-        Sensor SD41_VOC_587456 = this.sensorRepository.save(new Sensor(null, "587456_SD41_VOC", "VOC", null, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
-        this.genrateVOCValues(SD41_VOC_587456);
-
-        Sensor SD41_TEMP_876432 = this.sensorRepository.save(new Sensor(null, "876432_SD41_TEMP", "TEMP", null, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
-        this.genrateTemperatureValues(SD41_TEMP_876432);
-        Sensor SD41_CO2_876432 = this.sensorRepository.save(new Sensor(null, "876432_SD41_CO2", "CO2", null, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
-        this.genrateCO2Values(SD41_CO2_876432);
-        Sensor SD41_HM_876432 = this.sensorRepository.save(new Sensor(null, "876432_SD41_HM", "HM", null, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
-        this.genrateHumidityValues(SD41_HM_876432);
-        Sensor SD41_VOC_876432 = this.sensorRepository.save(new Sensor(null, "876432_SD41_VOC", "VOC", null, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
-        this.genrateVOCValues(SD41_VOC_876432);
-
+    private void genrateSensorsOfRoom(Room room, String board) {
+        Sensor SD41_TEMP = this.sensorRepository.save(new Sensor(null, board + "_SD41_TEMP", "TEMP", room, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
+        this.genrateTemperatureValues(SD41_TEMP);
+        Sensor SD41_CO2 = this.sensorRepository.save(new Sensor(null, board + "_SD41_CO2", "CO2", room, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
+        this.genrateCO2Values(SD41_CO2);
+        Sensor SD41_HM = this.sensorRepository.save(new Sensor(null, board + "_SD41_HM", "HM", room, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
+        this.genrateHumidityValues(SD41_HM);
+        Sensor SD41_VOC = this.sensorRepository.save(new Sensor(null, board + "_SD41_VOC", "VOC", room, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
+        this.genrateVOCValues(SD41_VOC);
     }
 
     private void genrateTemperatureValues(Sensor sensor) {
@@ -108,6 +100,7 @@ public class initDB {
             this.valueMeasureRepository.save(valueMeasure);
         }
     }
+
     private void genrateVOCValues(Sensor sensor) {
         // Erstelle eine Instanz der Random-Klasse
         Random random = new Random();
