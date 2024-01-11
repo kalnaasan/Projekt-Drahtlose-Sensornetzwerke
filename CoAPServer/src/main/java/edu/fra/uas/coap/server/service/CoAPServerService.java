@@ -48,7 +48,7 @@ public class CoAPServerService {
                                 .get("/sensors/temperature",
                                         observersManager.then(req -> CoapResponse.ok("21C").toFuture()))
                                 .put("/sensors", req -> {
-                                    log.debug(req.toString());
+                                    log.debug(new String(req.getPayload().getBytes()));
                                     log.debug("Adding values to Sensor");
                                     DTOValueMeasure valueMeasure = new DTOValueMeasure();
                                     for (String key : valueMeasure.getValues().keySet()) {
