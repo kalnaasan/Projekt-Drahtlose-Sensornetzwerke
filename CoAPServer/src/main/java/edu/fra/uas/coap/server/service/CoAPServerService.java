@@ -47,7 +47,7 @@ public class CoAPServerService {
                                                 MediaTypes.CT_APPLICATION_LINK__FORMAT).toFuture())
                                 .get("/sensors/temperature",
                                         observersManager.then(req -> CoapResponse.ok("21C").toFuture()))
-                                .post("/sensors/temperature", req -> {
+                                .put("/sensors", req -> {
                                     log.debug(req.toString());
                                     log.debug("Adding values to Sensor");
                                     DTOValueMeasure valueMeasure = new DTOValueMeasure();
