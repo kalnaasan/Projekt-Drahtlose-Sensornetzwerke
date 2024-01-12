@@ -1,5 +1,6 @@
 package edu.fra.uas.coap.server.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mbed.coap.packet.CoapResponse;
 import com.mbed.coap.packet.Code;
 import com.mbed.coap.packet.MediaTypes;
@@ -36,46 +37,59 @@ public class CoAPServerService {
         ObserversManager observersManager = new ObserversManager();
         CoapServer server = CoapServer.builder()
                 .transport(new DatagramSocketTransport(inetSocketAddress))
-                .route(
-                        RouterService.builder()
-                                .get("/.well-known/core",
-                                        req -> CoapResponse
-                                                .ok("</sensors/temperature>", MediaTypes.CT_APPLICATION_LINK__FORMAT)
-                                                .toFuture())
-                                .post("/actuators/switch",
-                                        req -> CoapResponse.ok(Code.C204_CHANGED.codeToString(),
-                                                MediaTypes.CT_APPLICATION_LINK__FORMAT).toFuture())
-                                .get("/sensors/temperature",
-                                        observersManager.then(req -> CoapResponse.ok("21C").toFuture()))
-                                .put("/sensors", req -> {
-                                    log.debug(new String(req.getPayload().getBytes()));
-                                    log.debug("Adding values to Sensor");
-                                    DTOValueMeasure valueMeasure = new DTOValueMeasure();
-                                    for (String key : valueMeasure.getValues().keySet()) {
-                                        String name = valueMeasure.getId() + '_' + key;
+                .route(RouterService.builder()
+                        .get("/.well-known/core",
+                                req -> CoapResponse.ok("</sensors/temperature>", MediaTypes.CT_APPLICATION_LINK__FORMAT).toFuture())
+                        .post("/actuators/switch",
+                                req -> CoapResponse.ok(Code.C204_CHANGED.codeToString(), MediaTypes.CT_APPLICATION_LINK__FORMAT).toFuture())
+                        .get("/sensors/temperature",
+                                observersManager.then(req -> CoapResponse.ok("21C").toFuture()))
+                        .put("/sensors", req -> {
+                            log.debug("Adding values to Sensor");
+                            String json = new String(req.getPayload().getBytes());
+                            log.debug("JSON => {}", json);
 
-                                        Optional<Sensor> sensorOptional = this.sensorRepository.findByName(name);
-                                        Sensor sensor;
-                                        if (sensorOptional.isEmpty()) {
-                                            // create sensor
-                                            sensor = new Sensor();
-                                            sensor.setName(name);
-                                            sensor.setType(key.split("_")[1]);
-                                            sensor = this.sensorRepository.save(sensor);
-                                        } else {
-                                            sensor = sensorOptional.get();
-                                        }
-                                        // create value for the sensor
-                                        ValueMeasure value = new ValueMeasure();
-                                        value.setValue(valueMeasure.getValues().get(key));
-                                        value.setSensor(sensor);
-                                        this.valueMeasureRepository.save(value);
-                                    }
-                                    return CoapResponse.ok("confirmed").toFuture();
-                                }))
-                .build();
+                            DTOValueMeasure valueMeasure = convertJSONToObject(json);
+                            assert valueMeasure != null;
+                            for (String key : valueMeasure.getValues().keySet()) {
+                                String name = valueMeasure.getId() + '_' + key;
+
+                                Optional<Sensor> sensorOptional = this.sensorRepository.findByName(name);
+                                Sensor sensor;
+                                if (sensorOptional.isEmpty()) {
+                                    // create sensor
+                                    sensor = new Sensor();
+                                    sensor.setName(name);
+                                    sensor.setType(key.split("_")[1]);
+                                    sensor = this.sensorRepository.save(sensor);
+                                } else {
+                                    sensor = sensorOptional.get();
+                                }
+                                // create value for the sensor
+                                ValueMeasure value = new ValueMeasure();
+                                value.setValue(valueMeasure.getValues().get(key));
+                                value.setSensor(sensor);
+                                this.valueMeasureRepository.save(value);
+                            }
+                            return CoapResponse.ok("confirmed").toFuture();
+                        })).build();
         observersManager.init(server);
         server.start();
         log.info("Server is Started with socket: coap:/{}", server.getLocalSocketAddress());
+    }
+
+    private static DTOValueMeasure convertJSONToObject(String json) {
+        // ObjectMapper erstellen
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            // JSON-String in DTOValueMeasure umwandeln
+            DTOValueMeasure dtoValueMeasure = objectMapper.readValue(json, DTOValueMeasure.class);
+            // Ausgabe des Java-Objekts
+            log.info(dtoValueMeasure.toString());
+            return dtoValueMeasure;
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            return null;
+        }
     }
 }
