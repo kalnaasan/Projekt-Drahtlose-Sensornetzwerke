@@ -1,11 +1,45 @@
 version: '3'
 services:
+  nginx:
+    image: 'sensor-nginx:latest'
+    restart: always
+    container_name: frontend
+    ports:
+      - 80:80
+    networks:
+      configurator_compose:
+        ipv4_address: 10.20.30.6
+  api:
+    image: 'sensor-api:latest'
+    restart: always
+    container_name: backend
+    ports:
+      - 8080:8080
+    networks:
+      configurator_compose:
+        ipv4_address: 10.20.30.7
+    environment:
+      spring.profiles.active: 'prod'
+  coap-server:
+    image: 'sensor-coap:latest'
+    restart: always
+    container_name: mysql
+    ports:
+      - 5683:5683
+    networks:
+      configurator_compose:
+        ipv4_address: 10.20.30.8
+    environment:
+      spring.profiles.active: 'prod'
   db:
     image: 'mysql:latest'
     restart: always
     container_name: mysql
     ports:
       - 3306:3306
+    networks:
+      configurator_compose:
+        ipv4_address: 10.20.30.9
     environment:
       MYSQL_ROOT_PASSWORD: sensor12345
       MYSQL_DATABASE: sensor
@@ -16,3 +50,6 @@ services:
 volumes:
     data:
       external: false
+networks:
+      configurator_compose:
+        ipv4_address: 10.20.30.7
