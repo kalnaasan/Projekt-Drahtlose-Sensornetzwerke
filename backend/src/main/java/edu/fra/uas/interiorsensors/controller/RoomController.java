@@ -7,6 +7,7 @@ import edu.fra.uas.interiorsensors.model.Sensor;
 import edu.fra.uas.interiorsensors.repository.RoomRepository;
 
 import edu.fra.uas.interiorsensors.repository.SensorRepository;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
@@ -22,9 +23,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @CrossOrigin(origins = "*")
@@ -57,7 +60,6 @@ public class RoomController implements BaseController<Room> {
                         order -> this.message("Getting Room by id", order, HttpStatus.OK))
                 .orElseGet(() -> this.message("Room not found", null, HttpStatus.NOT_FOUND));
     }
-
     @PostMapping
     @Override
     public ResponseEntity<ResponseMessage> create(@RequestBody Room room) {
@@ -68,14 +70,18 @@ public class RoomController implements BaseController<Room> {
             return this.message("Room is already exists", null, HttpStatus.CONFLICT);
         }
         Room roomCreated = this.roomRepository.save(room);
-        for (Sensor sensor: room.getSensors()) {
+        List<Sensor> sensors = roomCreated.getSensors().stream().collect(Collectors.toList());;
+        roomCreated.getSensors().clear();
+        for (Sensor sensor: sensors) {
             sensor.setRoom(roomCreated);
             this.sensorRepository.save(sensor);
         }
         return this.message("Created Room", roomCreated, HttpStatus.CREATED);
     }
 
-    @PutMapping("/{id}")
+
+
+    @PutMapping(" /{id}")
     @Override
     public ResponseEntity<ResponseMessage> update(@PathVariable("id") UUID id, @RequestBody Room room) {
         log.debug("Updating User by id: {}", id);

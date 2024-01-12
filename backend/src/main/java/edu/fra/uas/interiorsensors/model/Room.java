@@ -41,7 +41,7 @@ public class Room {
     @JsonProperty("name")
     private String name;
 
-    @OneToMany(targetEntity = Sensor.class, mappedBy = "room", cascade = CascadeType.MERGE)
+    @OneToMany(targetEntity = Sensor.class, mappedBy = "room")
     private List<Sensor> sensors = new ArrayList<>();
 
     @CreationTimestamp
