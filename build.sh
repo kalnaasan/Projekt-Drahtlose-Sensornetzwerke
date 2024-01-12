@@ -5,8 +5,13 @@ docker compose -p sensor down
 # Update the repository without using the cache
 git pull origin main
 
+
+# Change to the DB folder and start DB for deployment
+cd ./DB/
+docker compose -p temp up -d
+
 # Change to the CoAPServer folder and build the Docker image
-cd ./CoAPServer/
+cd ../CoAPServer/
 chmod +x mvnw
 ./mvnw clean package
 docker build -t sensor-coap:latest .
@@ -20,6 +25,10 @@ docker build -t sensor-api:latest .
 # Change to the frontend folder and build the Docker image for the frontend
 cd ../frontend
 docker build -t sensor-nginx:latest .
+
+# Change to the DB folder and stop DB for deployment
+cd ../DB/
+docker compose -p temp up -d
 
 # Name des Netzwerks
 network_name="configurator_compose"
