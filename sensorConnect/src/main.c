@@ -1,41 +1,21 @@
 #include <zephyr/net/openthread.h>
 #include <openthread/thread.h>
 #include <openthread/coap.h>
-//#include <zephyr/data/json.h>
+// #include <zephyr/data/json.h>
 #include <stdio.h>
-
 #include "sensor_functionality.h"
 
 #define SLEEP_TIME_MS 1000
 #define TEXTBUFFER_SIZE 256
 
-#define COAP_PORT 5683
+const char *serverIpAddr = "fdda:72bc:8975:2:0:0:10.80.2.239";
 
-/* CoAP Module */
-/* Thread multicast mesh local address */
-static struct sockaddr_in6 multicast_local_addr = {
-	.sin6_family = AF_INET6,
-	.sin6_port = htons(COAP_PORT),
-	.sin6_addr.s6_addr = { 0xff, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-			       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 },
-	.sin6_scope_id = 0U
-};
-
-/* Variable for storing server address acquiring in provisioning handshake 
-static char unique_local_addr_str[INET6_ADDRSTRLEN];
-static struct sockaddr_in6 unique_local_addr = {
-	.sin6_family = AF_INET6,
-	.sin6_port = htons(COAP_PORT),
-	.sin6_addr.s6_addr = {0xfd, 0x00, 0x00, 0x00, 0xfb, 0x01, 0x00, 0x01, "192.168.02"},
-	.sin6_scope_id = 0U
-};
-*/
-static void coap_send_data_request(void);
-static void coap_send_data_response_cb(void * p_context, otMessage * p_message,
-										const otMessageInfo * p_message_info, otError result);
 void coap_init(void);
+void coap_send_data_response_cb(void *p_context, otMessage *p_message, const otMessageInfo *p_message_info, otError result);
+void coap_send_data_request(char *message);
 
-void main(void){
+void main(void)
+{
 	int16_t error = 0;
 	/*
 	SCD41_co2 = 1135;
@@ -55,93 +35,97 @@ void main(void){
 	/* Start periodic measurement */
 	start_measurement(error);
 	s_state = PERIODIC_MEASURING;
-	
 	coap_init();
-	
+
 	k_msleep(SLEEP_TIME_MS); // for safety
-	
-	while(1) {
+
+	while (true)
+	{
 		/* Read Measurement */
 		read_measurement();
 		print_measurement();
-		/* CoAP Message*/
-		coap_send_data_request();
+		const char* my_sensor_data = create_coap_message();
+		coap_send_data_request(my_sensor_data);
 		k_msleep(5000);
 	}
 }
 
-static void coap_send_data_response_cb(void * p_context, otMessage * p_message,
-										const otMessageInfo * p_message_info, otError result){
-	if (result == OT_ERROR_NONE) {
+void coap_init(void)
+{
+	otInstance *p_instance = openthread_get_default_instance();
+	otError error = otCoapStart(p_instance, OT_DEFAULT_COAP_PORT);
+	if (error != OT_ERROR_NONE)
+	{
+		printk("Failed to start Coap: %d\n", error);
+	}
+}
+
+void coap_send_data_response_cb(void *p_context, otMessage *p_message, const otMessageInfo *p_message_info, otError result)
+{
+	if (result == OT_ERROR_NONE)
+	{
 		printk("Delivery confirmed.\n");
-	} else {
+	}
+	else
+	{
 		printk("Delivery not confirmed: %d\n", result);
 	}
 }
 
-static void coap_send_data_request(void){
+void coap_send_data_request(char *message)
+{
 	otError error = OT_ERROR_NONE;
-	otMessage * myMessage;
+	otMessage *myMessage;
 	otMessageInfo myMessageInfo;
-	otInstance * myInstance = openthread_get_default_instance();
-	
+	otInstance *myInstance = openthread_get_default_instance();
 	const otMeshLocalPrefix *ml_prefix = otThreadGetMeshLocalPrefix(myInstance);
-	uint8_t serverInterfaceID[8]= {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01};
-	
-	if(s_state != PERIODIC_MEASURING) {
-		if(!valid_SC41_data || !valid_SVM41_data) {
-			printk("Data not ready for transmitting via CoAP.");
-			error = -20;
-			goto exit;
-		}
-	}
+	uint8_t serverInterfaceID[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01};
 
-	const char* my_sensor_data = create_coap_message();
-
-	do{
+	const char *myTemperatureJson = message;
+	do
+	{
 		myMessage = otCoapNewMessage(myInstance, NULL);
-		if (myMessage == NULL) {
-			printk("Failed to allocate message for CoAP Request\n"); return;
+		if (myMessage == NULL)
+		{
+			printk("Failed to allocate message for CoAP Request\n");
+			return;
 		}
-
 		otCoapMessageInit(myMessage, OT_COAP_TYPE_CONFIRMABLE, OT_COAP_CODE_PUT);
-		
-		error = otCoapMessageAppendUriPathOptions(myMessage, "storedata");
-		if (error != OT_ERROR_NONE){ break; }
-		
-		error = otCoapMessageAppendContentFormatOption(myMessage,
-											OT_COAP_OPTION_CONTENT_FORMAT_JSON );
-		if (error != OT_ERROR_NONE){ break; }
-
+		error = otCoapMessageAppendUriPathOptions(myMessage, "sensors");
+		if (error != OT_ERROR_NONE)
+		{
+			break;
+		}
+		error = otCoapMessageAppendContentFormatOption(myMessage, OT_COAP_OPTION_CONTENT_FORMAT_JSON);
+		if (error != OT_ERROR_NONE)
+		{
+			break;
+		}
 		error = otCoapMessageSetPayloadMarker(myMessage);
-		if (error != OT_ERROR_NONE){ break; }
-
-		error = otMessageAppend(myMessage, my_sensor_data,
-		strlen(my_sensor_data));
-		if (error != OT_ERROR_NONE){ break; }
-
+		if (error != OT_ERROR_NONE)
+		{
+			break;
+		}
+		error = otMessageAppend(myMessage, myTemperatureJson, strlen(myTemperatureJson));
+		if (error != OT_ERROR_NONE)
+		{
+			break;
+		}
 		memset(&myMessageInfo, 0, sizeof(myMessageInfo));
 		memcpy(&myMessageInfo.mPeerAddr.mFields.m8[0], ml_prefix, 8);
 		memcpy(&myMessageInfo.mPeerAddr.mFields.m8[8], serverInterfaceID, 8);
 		myMessageInfo.mPeerPort = OT_DEFAULT_COAP_PORT;
+		error = otIp6AddressFromString(serverIpAddr, &myMessageInfo.mPeerAddr);
+		error = otCoapSendRequest(myInstance, myMessage, &myMessageInfo, coap_send_data_response_cb, NULL);
+	} while (false);
 
-		
-		error = otCoapSendRequest(myInstance, myMessage, &myMessageInfo,
-											coap_send_data_response_cb, NULL);
-	}while(false);
-
-	exit:
-		if (error != OT_ERROR_NONE) {
-			printk("Failed to send CoAP Request: %d\n", error);
-			otMessageFree(myMessage);
-		}else{
-			printk("CoAP data send.\n");
-		}
-}
-
-void coap_init(void){
-	otInstance * p_instance = openthread_get_default_instance();
-	otError error = otCoapStart(p_instance, OT_DEFAULT_COAP_PORT);
-	if (error!=OT_ERROR_NONE)
-		printk("Failed to start Coap: %d\n", error);
+	if (error != OT_ERROR_NONE)
+	{
+		printk("Failed to send CoAP Request: %d\n", error);
+		otMessageFree(myMessage);
+	}
+	else
+	{
+		printk("CoAP data send.\n");
+	}
 }
