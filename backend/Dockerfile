@@ -7,12 +7,6 @@ RUN apt update && apt -y upgrade
 # Install OpenJDK 17
 RUN apt -y install openjdk-17-jdk
 
-# Install FFmpeg
-RUN apt -y install ffmpeg
-
-# Check the FFmpeg version
-RUN ffmpeg -version
-
 # Add the JAR file to the container
 ADD target/InteriorSensors-1.0.0.jar InteriorSensors-1.0.0.jar
 
