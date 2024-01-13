@@ -28,7 +28,7 @@ docker build -t sensor-nginx:latest .
 
 # Change to the DB folder and stop DB for deployment
 cd ../DB/
-docker compose -p temp up -d
+docker compose -p temp down
 
 # Name des Netzwerks
 network_name="configurator_compose"
