@@ -42,6 +42,9 @@ else
     echo "Das Netzwerk '$network_name' wurde erfolgreich erstellt."
 fi
 
+# Change to the main folder and start application
+cd ../
+
 # start stack
 docker compose -p sensor up -d
 
