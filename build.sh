@@ -14,17 +14,17 @@ docker compose -p temp up -d
 cd ../CoAPServer/
 chmod +x mvnw
 ./mvnw clean package
-docker build -t sensor-coap:latest .
+docker build -t sensor-coap:latest --progress=plain .
 
 # Change to the backend folder and build the Docker image
 cd ../backend/
 chmod +x mvnw
 ./mvnw clean package -Dspring.profiles.active=test
-docker build -t sensor-api:latest .
+docker build -t sensor-api:latest --progress=plain .
 
 # Change to the frontend folder and build the Docker image for the frontend
 cd ../frontend
-docker build -t sensor-nginx:latest .
+docker build -t sensor-nginx:latest --progress=plain .
 
 # Change to the DB folder and stop DB for deployment
 cd ../DB/
