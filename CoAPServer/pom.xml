@@ -12,7 +12,7 @@
     </parent>
     <groupId>edu.fra.uas.coap</groupId>
     <artifactId>Server</artifactId>
-    <version>1.0.0.</version>
+    <version>1.0.0</version>
     <name>CoAPServer</name>
     <description>CoAPServer</description>
     <properties>
