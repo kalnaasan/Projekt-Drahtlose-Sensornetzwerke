@@ -2,10 +2,6 @@
 
 docker compose -p sensor down
 
-# Update the repository without using the cache
-git pull origin main
-
-
 # Change to the DB folder and start DB for deployment
 cd ./DB/
 docker compose -p temp up -d
@@ -13,7 +9,7 @@ docker compose -p temp up -d
 # Change to the CoAPServer folder and build the Docker image
 cd ../CoAPServer/
 chmod +x mvnw
-./mvnw clean package
+./mvnw clean package -Dspring.profiles.active=test
 docker build -t sensor-coap:latest --progress=plain .
 
 # Change to the backend folder and build the Docker image
