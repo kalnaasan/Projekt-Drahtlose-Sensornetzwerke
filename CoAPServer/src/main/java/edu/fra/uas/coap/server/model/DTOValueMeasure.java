@@ -14,7 +14,7 @@ import java.util.Map;
 @ToString
 public class DTOValueMeasure {
 
-    private Integer id;
+    private String id;
     private Map<String, Integer> values = new HashMap<>();
 
 }
