@@ -18,3 +18,5 @@ spring:
     hibernate:
       ddl-auto: create
     show-sql: true
+coap:
+  server: 127.0.0.1

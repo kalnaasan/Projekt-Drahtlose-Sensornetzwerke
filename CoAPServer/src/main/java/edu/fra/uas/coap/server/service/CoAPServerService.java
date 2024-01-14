@@ -15,6 +15,7 @@ import edu.fra.uas.coap.server.repository.SensorRepository;
 import edu.fra.uas.coap.server.repository.ValueMeasureRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -25,6 +26,8 @@ import java.util.Optional;
 @Slf4j
 @Service
 public class CoAPServerService {
+    @Value("${coap.server}")
+    private String serverIP;
     private final SensorRepository sensorRepository;
     private final ValueMeasureRepository valueMeasureRepository;
 
@@ -34,7 +37,7 @@ public class CoAPServerService {
         this.valueMeasureRepository = valueMeasureRepository;
 
         log.info("Starting CoAP server");
-        InetSocketAddress inetSocketAddress = new InetSocketAddress("127.0.0.1", 5683);
+        InetSocketAddress inetSocketAddress = new InetSocketAddress(this.serverIP, 5683);
         ObserversManager observersManager = new ObserversManager();
         CoapServer server = CoapServer.builder()
                 .transport(new DatagramSocketTransport(inetSocketAddress))
