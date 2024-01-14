@@ -20,17 +20,17 @@ services:
         ipv4_address: 10.20.30.7
     environment:
       spring.profiles.active: 'prod'
-  coap-server:
-    image: 'sensor-coap:latest'
-    restart: always
-    container_name: coap-server
-    ports:
-      - 5683:5683
-    networks:
-      compose:
-        ipv4_address: 10.20.30.8
-    environment:
-      spring.profiles.active: 'prod'
+#  coap-server:
+#    image: 'sensor-coap:latest'
+#    restart: always
+#    container_name: coap-server
+#    ports:
+#      - 10.80.2.239:5683:5683/udp
+#    networks:
+#      compose:
+#        ipv4_address: 10.20.30.8
+#    environment:
+#      spring.profiles.active: 'prod'
 #  db:
 #    image: 'mysql:latest'
 #    restart: always
