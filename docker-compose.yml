@@ -1,6 +1,7 @@
 version: '3'
 services:
   nginx:
+    build: ./frontend
     image: 'sensor-nginx:latest'
     restart: always
     container_name: frontend
@@ -10,6 +11,7 @@ services:
       compose:
         ipv4_address: 10.20.30.6
   api:
+    build: ./backend
     image: 'sensor-api:latest'
     restart: always
     container_name: backend
