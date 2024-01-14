@@ -93,8 +93,8 @@ export class ChartComponent implements OnInit {
   public updateOptionsData: { [key: string]: ApexXAxis } = {
     'today': {
       type: 'datetime',
-      min: new Date('2024-01-08T00:00:00').getTime(),
-      max: new Date('2024-01-08T23:59:59').getTime(),
+      min: new Date().setHours(0,0,0),
+      max: new Date().setHours(23,59,59),
       tickAmount: 6
     }
   };
