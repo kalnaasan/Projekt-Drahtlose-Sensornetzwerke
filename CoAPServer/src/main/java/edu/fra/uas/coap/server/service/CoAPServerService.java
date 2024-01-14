@@ -27,7 +27,7 @@ import java.util.Optional;
 @Service
 public class CoAPServerService {
     @Value("${coap.server}")
-    private String serverIP;
+    private String serverIP = "127.0.0.1";
     private final SensorRepository sensorRepository;
     private final ValueMeasureRepository valueMeasureRepository;
 
