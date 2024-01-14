@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Slf4j
@@ -68,6 +69,7 @@ public class CoAPServerService {
                                 // create value for the sensor
                                 ValueMeasure value = new ValueMeasure();
                                 value.setValue(valueMeasure.getValues().get(key));
+                                value.setReadAt(LocalDateTime.now());
                                 value.setSensor(sensor);
                                 this.valueMeasureRepository.save(value);
                             }

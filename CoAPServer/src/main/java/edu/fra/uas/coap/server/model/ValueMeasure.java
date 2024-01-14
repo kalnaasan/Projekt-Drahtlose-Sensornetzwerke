@@ -15,6 +15,8 @@ import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -32,17 +34,19 @@ public class ValueMeasure {
     @Column(name = "value")
     private double value;
 
+    @Column(name = "read_at")
+    private LocalDateTime readAt;
+
+    @JsonIgnore
     @ManyToOne(targetEntity = Sensor.class)
     @JoinColumn(name = "sensor_id")
     private Sensor sensor;
 
     @CreationTimestamp
-    @Column(name = "created_at")
+    @Column (name = "created_at")
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 }
-
-
