@@ -22,7 +22,7 @@ import {ApiService} from "../../services/api.service";
 export class ChartComponent implements OnInit {
   @Input() nameChart: any;
   @Input() srcData: any;
-  public data: any;
+  public data: any[]=[];
   public averageValues: number = 0;
   public activeOptionButton = 'today';
   public minValue = 0;
@@ -153,45 +153,49 @@ export class ChartComponent implements OnInit {
   }
 
   private getData(from: string, to: string){
-    this.apiService.getValueBySensorTypeAndDate(this.nameChart, from, to).subscribe({
-      next: (res: any) => {
-        this.data = this.convertDataToChartData(res.data);
-        this.xaxis = this.updateOptionsData[this.activeOptionButton];
-        this.series = [{
-          name: this.nameChart,
-          data: this.data
-        }];
-        this.averageValues = Math.round(this.calculateAverage());
-        if (this.nameChart.includes("temp")) {
-          // 16 - 18 - 24 - 26
-          this.minValue = 16;
-          this.minNormalValue = 18
-          this.maxNormalValue = 24
-          this.maxValue = 26;
-        } else if (this.nameChart.includes('hum')) {
-          this.minValue = 30;
-          this.minNormalValue = 40
-          this.maxNormalValue = 60
-          this.maxValue = 70;
-        } else if (this.nameChart.includes('voc')) {
-          // 50 - 51 - 100
-          this.minValue = 0;
-          this.minNormalValue = 0
-          this.maxNormalValue = 50
-          this.maxValue = 100;
-        } else if (this.nameChart.includes('co2')) {
-          // 1000 - 1001 - 2000 -
-          this.minValue = 0;
-          this.minNormalValue = 0
-          this.maxNormalValue = 1000
-          this.maxValue = 2000;
-        }
-        this.title = {
-          text: this.nameChart
-        };
-      },
-      error: (err: any) => console.log(err),
-    });
+    if (this.nameChart !== null){
+      this.apiService.getValueBySensorTypeAndDate(this.nameChart, from, to).subscribe({
+        next: (res: any) => {
+          this.data = this.convertDataToChartData(res.data);
+          this.xaxis = this.updateOptionsData[this.activeOptionButton];
+          this.series = [{
+            name: this.nameChart,
+            data: this.data
+          }];
+          this.averageValues = Math.round(this.calculateAverage());
+          if (this.nameChart.includes("temp")) {
+            // 16 - 18 - 24 - 26
+            this.minValue = 16;
+            this.minNormalValue = 18
+            this.maxNormalValue = 24
+            this.maxValue = 26;
+          } else if (this.nameChart.includes('hum')) {
+            this.minValue = 30;
+            this.minNormalValue = 40
+            this.maxNormalValue = 60
+            this.maxValue = 70;
+          } else if (this.nameChart.includes('voc')) {
+            // 50 - 51 - 100
+            this.minValue = 0;
+            this.minNormalValue = 0
+            this.maxNormalValue = 50
+            this.maxValue = 100;
+          } else if (this.nameChart.includes('co2')) {
+            // 1000 - 1001 - 2000 -
+            this.minValue = 0;
+            this.minNormalValue = 0
+            this.maxNormalValue = 1000
+            this.maxValue = 2000;
+          }
+          this.title = {
+            text: this.nameChart
+          };
+        },
+        error: (err: any) => console.log(err),
+      });
+
+    }
+
   }
   public calculateAverage(): number {
     /*let sum = 0;
