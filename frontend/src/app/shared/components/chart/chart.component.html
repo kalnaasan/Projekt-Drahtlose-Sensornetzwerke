@@ -3,10 +3,10 @@
   <button class="mt-2" (click)="updateOptions( 'today' )" [class.active]="activeOptionButton=='today'">Today</button>
   <button class="mt-2" (click)="updateOptions( 'now' )" [class.active]="activeOptionButton=='now'">Now</button>
   <button class="mt-2 mx-1 bg-info p-1 ml-1 rounded">{{averageValues}}
-    <span *ngIf="nameChart.includes('CO2')" >PPM</span>
-    <span *ngIf="nameChart.includes('HM')" >%</span>
-    <span *ngIf="nameChart.includes('TEMP')" >°C</span>
-    <span *ngIf="nameChart.includes('VOC')" >index</span>
+    <span *ngIf="nameChart.includes('co2')" >PPM</span>
+    <span *ngIf="nameChart.includes('hum')" >%</span>
+    <span *ngIf="nameChart.includes('temp')" >°C</span>
+    <span *ngIf="nameChart.includes('voc')" >index</span>
   </button>
   <button [className]="(averageValues < minValue || averageValues > maxValue)  ? 'mt-2 mx-1 bg-danger float-end btn-circle' : 'mt-2 mx-1 bg-danger-subtle float-end btn-circle'"></button>
   <button [className]="((averageValues >= minValue && averageValues < minNormalValue) || (averageValues > maxNormalValue && averageValues < maxValue))  ? 'mt-2 mx-1 bg-warning float-end btn-circle' : 'mt-2 mx-1 bg-warning-subtle float-end btn-circle'"></button>
