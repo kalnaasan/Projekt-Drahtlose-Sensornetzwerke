@@ -96,7 +96,7 @@ export class UpdateRoomComponent implements OnInit {
           this.roomForm.get('roomName')?.setValue("");
           this.roomForm.get('sensor')?.setValue([]);
 
-          // document.location.href = '/home';
+           document.location.href = '/rooms/' + this.room.id;
         },
         (err: any) => console.log(err.error)
       );// Close the dialog after successful submission
