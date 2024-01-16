@@ -129,7 +129,7 @@ const char *create_coap_message()
 	const char jsonBuffer[TEXTBUFFER_SIZE];
 
 	int ret = snprintk(jsonBuffer, sizeof(jsonBuffer),
-					   "{\"id\":%X%X,\"values\":{\"scd41_co2\":%u,\"scd41_temp\":%d,\"scd41_hum\":%d,\"svm41_hum\":%i,\"svm41_temp\":%i,\"svm41_voc\":%i,\"svm41_nox\":%i}}",
+					   "{\"id\":\"%X%X\",\"values\":{\"scd41_co2\":%u,\"scd41_temp\":%d,\"scd41_hum\":%d,\"svm41_hum\":%i,\"svm41_temp\":%i,\"svm41_voc\":%i,\"svm41_nox\":%i}}",
 					   NRF_FICR->DEVICEID[0], NRF_FICR->DEVICEID[1],
 					   SCD41_co2, SCD41_temperature, SCD41_humidity,
 					   SVM41_humidity * 10, (SVM41_temperature >> 1) * 10, SVM41_voc_index, SVM41_nox_index);
