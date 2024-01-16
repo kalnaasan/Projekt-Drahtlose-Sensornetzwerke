@@ -16,6 +16,7 @@ import {HomeComponent} from './components/home/home.component';
 import {SharedModule} from "../shared/shared.module";
 import {NgForOf, NgIf} from "@angular/common";
 import {RoomComponent} from './components/room/room.component';
+import { UpdateRoomComponent } from './components/update-room/update-room.component';
 
 
 @NgModule({
@@ -26,6 +27,7 @@ import {RoomComponent} from './components/room/room.component';
     AppComponent,
     DataViewComponent,
     AddRoomComponent,
+    UpdateRoomComponent,
 
   ],
   exports: [

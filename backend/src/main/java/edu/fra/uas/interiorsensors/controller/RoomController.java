@@ -37,6 +37,7 @@ public class RoomController implements BaseController<Room> {
 
     private final RoomRepository roomRepository;
     private final SensorRepository sensorRepository;
+
     @Autowired
     public RoomController(RoomRepository roomRepository, SensorRepository sensorRepository) {
         this.roomRepository = roomRepository;
@@ -60,6 +61,7 @@ public class RoomController implements BaseController<Room> {
                         order -> this.message("Getting Room by id", order, HttpStatus.OK))
                 .orElseGet(() -> this.message("Room not found", null, HttpStatus.NOT_FOUND));
     }
+
     @PostMapping
     @Override
     public ResponseEntity<ResponseMessage> create(@RequestBody Room room) {
@@ -70,9 +72,10 @@ public class RoomController implements BaseController<Room> {
             return this.message("Room is already exists", null, HttpStatus.CONFLICT);
         }
         Room roomCreated = this.roomRepository.save(room);
-        List<Sensor> sensors = roomCreated.getSensors().stream().collect(Collectors.toList());;
+        List<Sensor> sensors = roomCreated.getSensors().stream().collect(Collectors.toList());
+        ;
         roomCreated.getSensors().clear();
-        for (Sensor sensor: sensors) {
+        for (Sensor sensor : sensors) {
             sensor.setRoom(roomCreated);
             this.sensorRepository.save(sensor);
         }
@@ -80,17 +83,20 @@ public class RoomController implements BaseController<Room> {
     }
 
 
-
-    @PutMapping(" /{id}")
+    @PutMapping("/{id}")
     @Override
     public ResponseEntity<ResponseMessage> update(@PathVariable("id") UUID id, @RequestBody Room room) {
         log.debug("Updating User by id: {}", id);
         Optional<Room> optionalRoom = this.roomRepository.findById(id);
         if (optionalRoom.isPresent() && optionalRoom.get().getId().equals(room.getId())) {
-
-            Room roomCreated = this.roomRepository.save(room);
-
-            return this.message("Updating User by id", roomCreated, HttpStatus.ACCEPTED);
+            Room roomUpdated = this.roomRepository.save(room);
+            List<Sensor> sensors = roomUpdated.getSensors().stream().collect(Collectors.toList());
+            roomUpdated.getSensors().clear();
+            for (Sensor sensor : sensors) {
+                sensor.setRoom(roomUpdated);
+                this.sensorRepository.save(sensor);
+            }
+            return this.message("Updating User by id", roomUpdated, HttpStatus.ACCEPTED);
         }
         return this.message("User not found", null, HttpStatus.NOT_FOUND);
     }
