@@ -91,10 +91,22 @@ export class ChartComponent implements OnInit {
   };
 
   public updateOptionsData: { [key: string]: ApexXAxis } = {
+    'week': {
+      type: 'datetime',
+      min: new Date().getTime() - 604800000,
+      max: new Date().setHours(23, 59, 59),
+      tickAmount: 6
+    },
     'today': {
       type: 'datetime',
-      min: new Date().setHours(0,0,0),
-      max: new Date().setHours(23,59,59),
+      min: new Date().setHours(0, 0, 0),
+      max: new Date().setHours(23, 59, 59),
+      tickAmount: 6
+    },
+    'now': {
+      type: 'datetime',
+      min: new Date().getTime() - 3600000,
+      max: new Date().getTime() + 1800000,
       tickAmount: 6
     }
   };
@@ -106,53 +118,25 @@ export class ChartComponent implements OnInit {
   ngOnInit(): void {
     const from = this.convertNumberToDate(this.updateOptionsData[this.activeOptionButton].min);
     const to = this.convertNumberToDate(this.updateOptionsData[this.activeOptionButton].max);
-    this.apiService.getValueBySensorTypeAndDate(this.nameChart, from, to).subscribe({
-      next: (res: any) => {
-        this.data = this.convertDataToChartData(res.data);
-        this.xaxis = this.updateOptionsData[this.activeOptionButton];
-        this.series = [{
-          name: this.nameChart,
-          data: this.data
-        }];
-        this.averageValues = Math.round(this.calculateAverage());
-        if (this.nameChart.includes("TEMP")){
-          // 16 - 18 - 24 - 26
-        this.minValue = 16;
-        this.minNormalValue = 18
-        this.maxNormalValue = 24
-        this.maxValue = 26;
-        } else if (this.nameChart.includes('HM')){
-          this.minValue = 30;
-          this.minNormalValue = 40
-          this.maxNormalValue = 60
-          this.maxValue = 70;
-        } else if (this.nameChart.includes('VOC')){
-          // 50 - 51 - 100
-          this.minValue = 0;
-          this.minNormalValue = 0
-          this.maxNormalValue = 50
-          this.maxValue = 100;
-        } else if (this.nameChart.includes('CO2')){
-          // 1000 - 1001 - 2000 -
-          this.minValue = 0;
-          this.minNormalValue = 0
-          this.maxNormalValue = 1000
-          this.maxValue = 2000;
-        }
-        this.title = {
-          text: this.nameChart
-        };
-      },
-      error: (err: any) => console.log(err),
-    });
+    this.getData(from, to);
   }
 
   public updateOptions(option: any): void {
     this.activeOptionButton = option;
     this.xaxis = this.updateOptionsData[option];
+    if (this.activeOptionButton=== 'week'){
+      const from = this.convertNumberToDate(this.updateOptionsData[this.activeOptionButton].min);
+      const to = this.convertNumberToDate(this.updateOptionsData[this.activeOptionButton].max);
+      this.getData(from, to);
+    }
   }
 
   private convertDataToChartData(src: ValueMeasure[]) {
+    if (this.nameChart.includes('temp') || this.nameChart.includes('hum')) {
+      return src.map((valueMeasure: ValueMeasure) => [Date.parse(valueMeasure.readAt), Math.round(valueMeasure.value / 1000)]);
+    } else if (this.nameChart.includes('voc')) {
+      return src.map((valueMeasure: ValueMeasure) => [Date.parse(valueMeasure.readAt), Math.round(valueMeasure.value / 10)]);
+    }
     return src.map((valueMeasure: ValueMeasure) => [Date.parse(valueMeasure.readAt), valueMeasure.value]);
   }
 
@@ -168,11 +152,53 @@ export class ChartComponent implements OnInit {
     return [year, month, day].join('-');
   }
 
+  private getData(from: string, to: string){
+    this.apiService.getValueBySensorTypeAndDate(this.nameChart, from, to).subscribe({
+      next: (res: any) => {
+        this.data = this.convertDataToChartData(res.data);
+        this.xaxis = this.updateOptionsData[this.activeOptionButton];
+        this.series = [{
+          name: this.nameChart,
+          data: this.data
+        }];
+        this.averageValues = Math.round(this.calculateAverage());
+        if (this.nameChart.includes("temp")) {
+          // 16 - 18 - 24 - 26
+          this.minValue = 16;
+          this.minNormalValue = 18
+          this.maxNormalValue = 24
+          this.maxValue = 26;
+        } else if (this.nameChart.includes('hum')) {
+          this.minValue = 30;
+          this.minNormalValue = 40
+          this.maxNormalValue = 60
+          this.maxValue = 70;
+        } else if (this.nameChart.includes('voc')) {
+          // 50 - 51 - 100
+          this.minValue = 0;
+          this.minNormalValue = 0
+          this.maxNormalValue = 50
+          this.maxValue = 100;
+        } else if (this.nameChart.includes('co2')) {
+          // 1000 - 1001 - 2000 -
+          this.minValue = 0;
+          this.minNormalValue = 0
+          this.maxNormalValue = 1000
+          this.maxValue = 2000;
+        }
+        this.title = {
+          text: this.nameChart
+        };
+      },
+      error: (err: any) => console.log(err),
+    });
+  }
   public calculateAverage(): number {
-    let sum = 0;
+    /*let sum = 0;
     for (let i = 0; i < this.data.length; i++) {
       sum += this.data[i][1];
     }
-    return sum / this.data.length;
+    return sum / this.data.length;*/
+    return this.data[this.data.length - 1][1]
   }
 }
