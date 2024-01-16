@@ -44,8 +44,10 @@ void main(void)
 		/* Read Measurement */
 		read_measurement();
 		print_measurement();
-		const char* my_sensor_data = create_coap_message();
+		const char* my_sensor_data= (char*)malloc(TEXTBUFFER_SIZE * sizeof(char));
+		my_sensor_data = create_coap_message();
 		coap_send_data_request(my_sensor_data);
+		free(my_sensor_data);
 		k_msleep(5000);
 	}
 }
