@@ -1,0 +1,29 @@
+<mat-dialog-content class="custom-dialog-container">
+  <mat-card class="custom-dialog-content">
+    <h5 mat-dialog-title class="text-center my-2">Update new Room</h5>
+    <mat-card-content>
+      <form [formGroup]="roomForm" *ngIf="sensors.length > 0">
+
+        <mat-form-field>
+          <mat-label>Room Name</mat-label>
+          <input matInput formControlName="roomName" placeholder="Enter the Name" required>
+          <mat-error>Minimum three letters required</mat-error>
+        </mat-form-field>
+
+        <mat-form-field class="example-full-width my-1" style="display: block;">
+          <mat-label>Select Sensors</mat-label>
+          <mat-select placeholder="Select Clients" formControlName="sensor" multiple [compareWith]="compareClients">
+            <mat-option *ngFor="let sensor of sensors" [value]="sensor">
+              {{sensor.name}}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+      </form>
+    </mat-card-content>
+  </mat-card>
+  <mat-dialog-actions class="custom-dialog-actions">
+    <button mat-raised-button color="warn" class="cancel-button m-lg-1" (click)="cancel()">Cancel</button>
+    <button mat-raised-button color="primary" (click)="onSubmit()">Submit</button>
+  </mat-dialog-actions>
+</mat-dialog-content>
