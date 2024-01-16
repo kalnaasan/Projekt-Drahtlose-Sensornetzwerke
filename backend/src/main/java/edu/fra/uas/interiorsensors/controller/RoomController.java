@@ -90,7 +90,7 @@ public class RoomController implements BaseController<Room> {
         Optional<Room> optionalRoom = this.roomRepository.findById(id);
         if (optionalRoom.isPresent() && optionalRoom.get().getId().equals(room.getId())) {
             Room roomUpdated = this.roomRepository.save(room);
-            List<Sensor> sensors = roomUpdated.getSensors().stream().collect(Collectors.toList());
+            List<Sensor> sensors = room.getSensors().stream().collect(Collectors.toList());
             roomUpdated.getSensors().clear();
             for (Sensor sensor : sensors) {
                 sensor.setRoom(roomUpdated);
