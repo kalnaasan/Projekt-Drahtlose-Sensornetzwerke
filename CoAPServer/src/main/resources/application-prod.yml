@@ -6,7 +6,7 @@ spring:
   # Mysql connection
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://10.80.2.239:3306/sensor?useSSL=false&serverTimezone=UTC
+    url: jdbc:mysql://10.20.30.9:3306/sensor?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: sensor
     password: sensor12345
   ## Hibernate Properties
@@ -14,7 +14,9 @@ spring:
   jpa:
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQL57Dialect
+        dialect: org.hibernate.dialect.MySQL8Dialect
     hibernate:
       ddl-auto: update
     show-sql: false
+coap:
+  server: 10.20.30.8

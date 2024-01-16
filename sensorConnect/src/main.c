@@ -1,172 +1,131 @@
-#include <zephyr/kernel.h>
-#include <zephyr/device.h>
-#include <zephyr/devicetree.h>
-#include <zephyr/drivers/i2c.h>
-#include <zephyr/sys/printk.h>
+#include <zephyr/net/openthread.h>
+#include <openthread/thread.h>
+#include <openthread/coap.h>
+// #include <zephyr/data/json.h>
+#include <stdio.h>
+#include "sensor_functionality.h"
 
-#include "scd4x_i2c.h"
-#include "sensirion_common.h"
-#include "sensirion_i2c_hal.h"
+#define SLEEP_TIME_MS 1000
+#define TEXTBUFFER_SIZE 256
 
-void printErr(int err, char* errType, uint8_t* buffer) {
-	printk("ERR = %d |\t Type: %s, Buffer = [%d, %d] -> HEX %#2x%2x\n", err, errType, buffer[0], buffer[1], buffer[0], buffer[1]);
-}
-void printSuc(char* errType, uint8_t* buffer) {
-	printk("Command-> %s |\t Buffer = [%d, %d] -> HEX %#2x%2x\n", errType, buffer[0], buffer[1], buffer[0], buffer[1]);
-}
+const char *serverIpAddr = "fdda:72bc:8975:2:0:0:10.80.2.239";
 
-void clean_up_sensor_states(int16_t* error) {
-	// SCD41
-	scd4x_wake_up();
-	scd4x_stop_periodic_measurement();
-	scd4x_reinit();
-	// SVM41
-	error = svm41_device_reset();
-    if (error) {
-        printk("Error executing svm41_device_reset(): %i\n", error);
-    }
-	// SGP41 - NOT NEEDED?
-}
+void coap_init(void);
+void coap_send_data_response_cb(void *p_context, otMessage *p_message, const otMessageInfo *p_message_info, otError result);
+void coap_send_data_request(char *message);
 
-void self_test_SGP41(int16_t* error) {
-
-	uint16_t test_result;
-
-	error = sgp41_execute_self_test(&test_result);
-    if (error) {
-        printk("Error executing sgp41_execute_self_test(): %i\n", error);
-    } else {
-        printk("Test result: %u\n", test_result);
-    }
-}
-
-void start_measurement(int16_t* error) {
-	// SCD41
-	error = scd4x_start_periodic_measurement();
-    if (error) {
-        printk("Error executing scd4x_start_periodic_measurement(): %i\n",
-               error);
-    }
-	// SVM41
-	error = svm41_start_measurement();
-    if (error) {
-        printk("Error executing svm41_start_measurement(): %i\n", error);
-    }
-	// SGP41
-		// Parameters for deactivated SCD41_humidity compensation:
-    uint16_t default_rh = 0x8000;
-    uint16_t default_t = 0x6666;
-
-    	// sgp41 conditioning during 10 seconds before measuring
-    for (int i = 0; i < 10; i++) {
-        uint16_t sraw_voc;
-
-        sensirion_i2c_hal_sleep_usec(1000000);
-
-        error = sgp41_execute_conditioning(default_rh, default_t, &sraw_voc);
-        if (error) {
-            printk("Error executing sgp41_execute_conditioning(): "
-                   "%i\n",
-                   error);
-        } else {
-            printk("SRAW VOC: %u\n", sraw_voc);
-            printk("SRAW NOx: conditioning\n");
-        }
-    }
-}
-
-
-void main(void){
-
+void main(void)
+{
 	int16_t error = 0;
+	/*
+	SCD41_co2 = 1135;
+	SCD41_temperature = 23431;
+	SCD41_humidity = 44123;
+	SVM41_humidity = 39600;
+	SVM41_temperature = 23880;
+	SVM41_voc_index = 325;
+	SVM41_nox_index = 18;
+	*/
 
+	/* Init I2C, SC41, SVM41 */
 	sensirion_i2c_hal_init();
-
 	clean_up_sensor_states(error);
-	self_test_SGP41(error);
+	s_state = SENSOR_INIT;
 
+	/* Start periodic measurement */
 	start_measurement(error);
-	// SGP41 Parameters for deactivated humidity compensation:
-    uint16_t default_rh = 0x8000;
-    uint16_t default_t = 0x6666;
+	s_state = PERIODIC_MEASURING;
+	coap_init();
 
-	while (1) {
+	k_msleep(SLEEP_TIME_MS); // for safety
 
-		// Read Measurement
-		sensirion_i2c_hal_sleep_usec(1000000);	// 1 sec
-			// SCD41
-			bool data_ready_flag = false;
-			error = scd4x_get_data_ready_flag(&data_ready_flag);
-			if (error) {
-				printk("Error executing scd4x_get_data_ready_flag(): %i\n", error);
-				continue;
-			}
-			if (!data_ready_flag) {
-				continue;
-			}
+	while (true)
+	{
+		/* Read Measurement */
+		read_measurement();
+		print_measurement();
+		const char* my_sensor_data = create_coap_message();
+		coap_send_data_request(my_sensor_data);
+		k_msleep(5000);
+	}
+}
 
-			bool valid_SC41_data = false;
-			uint16_t SC41_co2;
-			int32_t SCD41_temperature;
-			int32_t SCD41_humidity;
-			error = scd4x_read_measurement(&SC41_co2, &SCD41_temperature, &SCD41_humidity);
-			if (error) {
-				printk("Error executing scd4x_read_measurement(): %i\n", error);
-			} else if (SC41_co2 == 0) {
-				printk("Invalid sample detected, skipping.\n");
-			} else {
-				valid_SC41_data = true;
-			}
-			// SVM41
-			bool valid_SVM41_data = false;
-			int16_t SVM41_humidity;
-			int16_t SVM41_temperature;
-			int16_t SVM41_voc_index;
-			int16_t SVM41_nox_index;
-			error = svm41_read_measured_values_as_integers(&SVM41_humidity, &SVM41_temperature,
-														&SVM41_voc_index, &SVM41_nox_index);
-			if (error) {
-				printk("Error executing svm41_read_measured_values_as_integers(): "
-					"%i\n",
-					error);
-			} else {
-				valid_SVM41_data = true;
-			}
-			// SGP41
-			bool valid_SGP41_data = false;
-			uint16_t sraw_voc;
-			uint16_t sraw_nox;
+void coap_init(void)
+{
+	otInstance *p_instance = openthread_get_default_instance();
+	otError error = otCoapStart(p_instance, OT_DEFAULT_COAP_PORT);
+	if (error != OT_ERROR_NONE)
+	{
+		printk("Failed to start Coap: %d\n", error);
+	}
+}
 
-			error = sgp41_measure_raw_signals(default_rh, default_t, &sraw_voc,
-											&sraw_nox);
-			if (error) {
-				printk("Error executing sgp41_measure_raw_signals(): "
-					"%i\n",
-					error);
-			} else {
-				valid_SGP41_data = true;
-			}
+void coap_send_data_response_cb(void *p_context, otMessage *p_message, const otMessageInfo *p_message_info, otError result)
+{
+	if (result == OT_ERROR_NONE)
+	{
+		printk("Delivery confirmed.\n");
+	}
+	else
+	{
+		printk("Delivery not confirmed: %d\n", result);
+	}
+}
 
-		// Print Measurements
-			if(valid_SC41_data) {
-				printk("SCD41 Measurement->\n");
-				printk("CO2: %u\n", SC41_co2);
-				printk("Temperature: %d m°C\n", SCD41_temperature);
-				printk("Humidity: %d mRH\n", SCD41_humidity);
-			}
+void coap_send_data_request(char *message)
+{
+	otError error = OT_ERROR_NONE;
+	otMessage *myMessage;
+	otMessageInfo myMessageInfo;
+	otInstance *myInstance = openthread_get_default_instance();
+	const otMeshLocalPrefix *ml_prefix = otThreadGetMeshLocalPrefix(myInstance);
+	uint8_t serverInterfaceID[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01};
 
-			if(valid_SVM41_data) {
-				printk("SVM41 Measurement->\n");
-				printk("Humidity: %i milli %% RH\n", SVM41_humidity * 10);
-				printk("Temperature: %i milli °C\n", (SVM41_temperature >> 1) * 10);
-				printk("VOC index: %i (index * 10)\n", SVM41_voc_index);
-				printk("NOx index: %i (index * 10)\n", SVM41_nox_index);
-			}
+	const char *myTemperatureJson = message;
+	do
+	{
+		myMessage = otCoapNewMessage(myInstance, NULL);
+		if (myMessage == NULL)
+		{
+			printk("Failed to allocate message for CoAP Request\n");
+			return;
+		}
+		otCoapMessageInit(myMessage, OT_COAP_TYPE_CONFIRMABLE, OT_COAP_CODE_PUT);
+		error = otCoapMessageAppendUriPathOptions(myMessage, "sensors");
+		if (error != OT_ERROR_NONE)
+		{
+			break;
+		}
+		error = otCoapMessageAppendContentFormatOption(myMessage, OT_COAP_OPTION_CONTENT_FORMAT_JSON);
+		if (error != OT_ERROR_NONE)
+		{
+			break;
+		}
+		error = otCoapMessageSetPayloadMarker(myMessage);
+		if (error != OT_ERROR_NONE)
+		{
+			break;
+		}
+		error = otMessageAppend(myMessage, myTemperatureJson, strlen(myTemperatureJson));
+		if (error != OT_ERROR_NONE)
+		{
+			break;
+		}
+		memset(&myMessageInfo, 0, sizeof(myMessageInfo));
+		memcpy(&myMessageInfo.mPeerAddr.mFields.m8[0], ml_prefix, 8);
+		memcpy(&myMessageInfo.mPeerAddr.mFields.m8[8], serverInterfaceID, 8);
+		myMessageInfo.mPeerPort = OT_DEFAULT_COAP_PORT;
+		error = otIp6AddressFromString(serverIpAddr, &myMessageInfo.mPeerAddr);
+		error = otCoapSendRequest(myInstance, myMessage, &myMessageInfo, coap_send_data_response_cb, NULL);
+	} while (false);
 
-			if(valid_SGP41_data) {
-				printk("SGP41 Measurement->\n");
-				printk("SRAW VOC: %u\n", sraw_voc);
-				printk("SRAW NOx: %u\n", sraw_nox);
-			}
+	if (error != OT_ERROR_NONE)
+	{
+		printk("Failed to send CoAP Request: %d\n", error);
+		otMessageFree(myMessage);
+	}
+	else
+	{
+		printk("CoAP data send.\n");
 	}
 }

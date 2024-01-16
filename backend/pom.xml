@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>edu.fra.uas</groupId>
 	<artifactId>InteriorSensors</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.0</version>
 	<name>InteriorSensors</name>
 	<description>InteriorSensors</description>
 	<properties>

@@ -8,6 +8,7 @@ import edu.fra.uas.interiorsensors.repository.SensorRepository;
 import edu.fra.uas.interiorsensors.repository.ValueMeasureRepository;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -17,6 +18,8 @@ import java.util.Random;
 @Component
 public class initDB {
 
+    @Value("${spring.profiles.active}")
+    private String activeProfile;
     private final RoomRepository roomRepository;
     private final SensorRepository sensorRepository;
     private final ValueMeasureRepository valueMeasureRepository;
@@ -30,19 +33,21 @@ public class initDB {
 
     @PostConstruct
     private void init() {
-        Room room1 = this.roomRepository.save(new Room(null, "Room 1", new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
-        this.genrateSensorsOfRoom(room1, "123456");
-        Room room2 = this.roomRepository.save(new Room(null, "Room 2", new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
-        this.genrateSensorsOfRoom(room2, "456789");
-        Room room3 = this.roomRepository.save(new Room(null, "Room 3", new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
-        this.genrateSensorsOfRoom(room3, "789123");
-        Room room4 = this.roomRepository.save(new Room(null, "Room 4", new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
-        this.genrateSensorsOfRoom(room4, "147258");
+        if (this.activeProfile.equals("dev")) {
+            Room room1 = this.roomRepository.save(new Room(null, "Room 1", new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
+            this.genrateSensorsOfRoom(room1, "123456");
+            Room room2 = this.roomRepository.save(new Room(null, "Room 2", new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
+            this.genrateSensorsOfRoom(room2, "456789");
+            Room room3 = this.roomRepository.save(new Room(null, "Room 3", new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
+            this.genrateSensorsOfRoom(room3, "789123");
+            Room room4 = this.roomRepository.save(new Room(null, "Room 4", new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
+            this.genrateSensorsOfRoom(room4, "147258");
 
-        this.sensorRepository.save(new Sensor(null, "369258_SD41_TEMP", "TEMP", null, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
-        this.sensorRepository.save(new Sensor(null, "369258_SD41_CO2", "CO2", null, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
-        this.sensorRepository.save(new Sensor(null, "369258_SD41_HM", "HM", null, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
-        this.sensorRepository.save(new Sensor(null, "369258_SD41_VOC", "VOC", null, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
+            this.sensorRepository.save(new Sensor(null, "369258_SD41_TEMP", "TEMP", null, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
+            this.sensorRepository.save(new Sensor(null, "369258_SD41_CO2", "CO2", null, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
+            this.sensorRepository.save(new Sensor(null, "369258_SD41_HM", "HM", null, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
+            this.sensorRepository.save(new Sensor(null, "369258_SD41_VOC", "VOC", null, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));    
+        }
     }
 
     private void genrateSensorsOfRoom(Room room, String board) {

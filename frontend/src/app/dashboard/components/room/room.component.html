@@ -1,7 +1,9 @@
 <div class="container mt-3">
   <div class="row" *ngIf="sensors.length > 0">
-    <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6 border" *ngFor="let sensor of sensors">
-      <app-chart [nameChart]="sensor.name" [srcData]="sensor.valueMeasures"></app-chart>
+    <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6" *ngFor="let sensor of sensors">
+      <div class="container border my-2 shadow">
+        <app-chart [nameChart]="sensor.name" [srcData]="sensor.valueMeasures"></app-chart>
+      </div>
     </div>
   </div>
 </div>

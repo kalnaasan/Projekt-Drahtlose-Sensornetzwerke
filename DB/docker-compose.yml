@@ -1,0 +1,29 @@
+version: '3'
+services:
+  db:
+    image: 'mysql:latest'
+    restart: always
+    container_name: mysql
+    ports:
+      - 3306:3306
+    networks:
+      compose:
+        ipv4_address: 10.20.30.9
+    environment:
+      MYSQL_ROOT_PASSWORD: sensor12345
+      MYSQL_DATABASE: sensor
+      MYSQL_USER: sensor
+      MYSQL_PASSWORD: sensor12345
+    volumes:
+      - data:/var/lib/mysql/
+volumes:
+    data:
+      external: false
+networks:
+  compose:
+    driver: bridge
+    external: true
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.20.30.0/24

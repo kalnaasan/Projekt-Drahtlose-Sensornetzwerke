@@ -40,7 +40,7 @@ public class SensorController {
             List<Sensor> sensors = this.sensorRepository.findAllByRoom_IdOrderByName(UUID.fromString(roomId));
             return this.message("Indexing Sensor", sensors, HttpStatus.OK);
         }
-        List<Sensor> sensors = this.sensorRepository.findAllByRoomIsNull();
+        List<Sensor> sensors = this.sensorRepository.findAllByRoomIsNullOrderByName();
         return this.message("Indexing Sensor", sensors, HttpStatus.OK);
     }
 

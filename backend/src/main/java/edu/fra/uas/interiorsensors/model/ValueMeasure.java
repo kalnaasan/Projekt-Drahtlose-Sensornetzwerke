@@ -32,6 +32,7 @@ public class ValueMeasure {
 
     @Column(name = "value")
     private double value;
+
     @Column(name = "read_at")
     private LocalDateTime readAt;
 
@@ -48,5 +49,3 @@ public class ValueMeasure {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 }
-
-

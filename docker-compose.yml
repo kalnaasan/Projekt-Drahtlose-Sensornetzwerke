@@ -1,18 +1,62 @@
 version: '3'
 services:
-  db:
-    image: 'mysql:latest'
+  nginx:
+    build: ./frontend
+    image: 'sensor-nginx:latest'
     restart: always
-    container_name: mysql
+    container_name: frontend
     ports:
-      - 3306:3306
+      - 80:80
+    networks:
+      compose:
+        ipv4_address: 10.20.30.6
+  api:
+    build: ./backend
+    image: 'sensor-api:latest'
+    restart: always
+    container_name: backend
+    ports:
+      - 8080:8080
+    networks:
+      compose:
+        ipv4_address: 10.20.30.7
     environment:
-      MYSQL_ROOT_PASSWORD: sensor12345
-      MYSQL_DATABASE: sensor
-      MYSQL_USER: sensor
-      MYSQL_PASSWORD: sensor12345
-    volumes:
-      - data:/var/lib/mysql/
-volumes:
-    data:
-      external: false
+      spring.profiles.active: 'prod'
+#  coap-server:
+#    image: 'sensor-coap:latest'
+#    restart: always
+#    container_name: coap-server
+#    ports:
+#      - 10.80.2.239:5683:5683/udp
+#    networks:
+#      compose:
+#        ipv4_address: 10.20.30.8
+#    environment:
+#      spring.profiles.active: 'prod'
+#  db:
+#    image: 'mysql:latest'
+#    restart: always
+#    container_name: mysql
+#    ports:
+#      - 3306:3306
+#    networks:
+#      compose:
+#        ipv4_address: 10.20.30.9
+#    environment:
+#      MYSQL_ROOT_PASSWORD: sensor12345
+#      MYSQL_DATABASE: sensor
+#      MYSQL_USER: sensor
+#      MYSQL_PASSWORD: sensor12345
+#    volumes:
+#      - data:/var/lib/mysql/
+#volumes:
+#    data:
+#      external: false
+networks:
+  compose:
+    driver: bridge
+    external: true
+    ipam:
+      driver: default
+      config:  
+        - subnet: 10.20.30.0/24
