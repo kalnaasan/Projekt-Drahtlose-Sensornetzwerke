@@ -13,7 +13,7 @@ export class SidebarComponent implements OnInit {
   @Input()
   public sideBarOpen = true;
   public routeItems: RouteItem[] = new Array<RouteItem>();
-
+  private data: any[]=[];
   constructor(private router: Router,
               private roomService: RoomService) {
   }
@@ -21,6 +21,7 @@ export class SidebarComponent implements OnInit {
   ngOnInit(): void {
     this.roomService.getAllRooms().subscribe({
       next: (res: any) => {
+        this.data=res.data;
         for (const item of res.data) {
           const routeItem: RouteItem = {
             name: item.name,
@@ -38,4 +39,13 @@ export class SidebarComponent implements OnInit {
     this.router.navigate(['/rooms']).then(() => {
     });
   }
+
+  updateRaum(item: any) {
+
+    const id = this.data.filter((room:any)=>room.name===item.name)[0].id;
+    this.router.navigate(['/rooms/edit/'+id]).then(() => {
+    });
+  }
+
+    protected readonly alert = alert;
 }
