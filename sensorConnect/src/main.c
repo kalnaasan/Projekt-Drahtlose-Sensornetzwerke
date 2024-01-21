@@ -1,7 +1,6 @@
 #include <zephyr/net/openthread.h>
 #include <openthread/thread.h>
 #include <openthread/coap.h>
-// #include <zephyr/data/json.h>
 #include <stdio.h>
 #include "sensor_functionality.h"
 
@@ -17,16 +16,7 @@ void coap_send_data_request(char *message);
 void main(void)
 {
 	int16_t error = 0;
-	/*
-	SCD41_co2 = 1135;
-	SCD41_temperature = 23431;
-	SCD41_humidity = 44123;
-	SVM41_humidity = 39600;
-	SVM41_temperature = 23880;
-	SVM41_voc_index = 325;
-	SVM41_nox_index = 18;
-	*/
-
+	
 	/* Init I2C, SC41, SVM41 */
 	sensirion_i2c_hal_init();
 	clean_up_sensor_states(error);
@@ -48,7 +38,7 @@ void main(void)
 		my_sensor_data = create_coap_message();
 		coap_send_data_request(my_sensor_data);
 		free(my_sensor_data);
-		k_msleep(5000);
+		k_msleep(60000);
 	}
 }
 
