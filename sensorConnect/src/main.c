@@ -8,7 +8,7 @@
 #define TEXTBUFFER_SIZE 256
 
 #define STACK_SIZE 1024
-#define SLEEP_TIME_SECONDS 10
+#define SLEEP_TIME_SECONDS 60
 
 /* CoAP */
 
