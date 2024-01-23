@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include "sensor_functionality.h"
 
-#define SLEEP_TIME_MS 1000
 #define TEXTBUFFER_SIZE 256
 
 #define STACK_SIZE 1024
@@ -18,7 +17,7 @@ void coap_init(void);
 void coap_send_data_response_cb(void *p_context, otMessage *p_message, const otMessageInfo *p_message_info, otError result);
 void coap_send_data_request(char *message);
 
-/* Mulitthreading */
+/* Multi-Threading */
 
 K_THREAD_STACK_DEFINE(sensor_stack, STACK_SIZE);
 struct k_thread sensor_thread_data;
@@ -75,11 +74,9 @@ void main(void)
 	/* Init I2C, SC41, SVM41 */
 	sensirion_i2c_hal_init();
 	clean_up_sensor_states(error);
-	s_state = SENSOR_INIT;
 
 	/* Start periodic measurement */
 	start_measurement(error);
-	s_state = PERIODIC_MEASURING;
 	k_sleep(K_SECONDS(10));
 	
 	coap_init();
