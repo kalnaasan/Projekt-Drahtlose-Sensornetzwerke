@@ -54,7 +54,7 @@ export class ChartComponent implements OnInit {
   };
   tooltip: ApexTooltip = {
     x: {
-      format: 'dd MMM yyyy - hh:mm:ss',
+      format: 'yyyy-MM-dd - HH:mm:ss',
     }
   };
   fill: ApexFill = {
