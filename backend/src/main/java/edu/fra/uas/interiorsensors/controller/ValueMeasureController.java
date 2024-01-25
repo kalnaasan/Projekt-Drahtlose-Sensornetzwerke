@@ -32,8 +32,8 @@ public class ValueMeasureController {
                                                  @RequestParam(value = "from") String from,
                                                  @RequestParam(value = "to") String to) {
         log.debug("Indexing ValueMeasure : {}", this.valueMeasureRepository.count());
-        LocalDateTime fromDate = LocalDateTime.parse(from + "T00:00:00");
-        LocalDateTime toDate = LocalDateTime.parse(to + "T23:59:59");
+        LocalDateTime fromDate = LocalDateTime.parse(from );
+        LocalDateTime toDate = LocalDateTime.parse(to);
         List<ValueMeasure> values = valueMeasureRepository.findAllBySensor_NameAndReadAtBetweenOrderByReadAtAsc(sensorName, fromDate, toDate);
         return this.message("Indexing Values", values, HttpStatus.OK);
     }
@@ -87,7 +87,7 @@ public class ValueMeasureController {
         Optional<ValueMeasure> ValueMeasureUpdate = this.valueMeasureRepository.findById(id);
 
         if (ValueMeasureUpdate.isPresent()) {
-            //this.valueMeasureRepository.deleteById(id);
+            this.valueMeasureRepository.deleteById(id);
             return this.message("ValueMeasure is deleted", null, HttpStatus.NO_CONTENT);
         }
         return this.message("ValueMeasure is not found", null, HttpStatus.NO_CONTENT);
