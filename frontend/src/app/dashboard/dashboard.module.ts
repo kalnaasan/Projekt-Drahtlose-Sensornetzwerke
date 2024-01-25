@@ -14,9 +14,11 @@ import {NgMultiSelectDropDownModule} from 'ng-multiselect-dropdown';
 import {AddRoomComponent} from './components/add-room/add-room.component';
 import {HomeComponent} from './components/home/home.component';
 import {SharedModule} from "../shared/shared.module";
-import {NgForOf, NgIf} from "@angular/common";
+import {NgForOf, NgIf, NgSwitch, NgSwitchCase, NgSwitchDefault} from "@angular/common";
 import {RoomComponent} from './components/room/room.component';
-import { UpdateRoomComponent } from './components/update-room/update-room.component';
+import {UpdateRoomComponent} from './components/update-room/update-room.component';
+import {GrundrissComponent} from './components/grundriss/grundriss.component';
+import { StatusDialogComponent } from './components/status-dialog/status-dialog.component';
 
 
 @NgModule({
@@ -28,7 +30,8 @@ import { UpdateRoomComponent } from './components/update-room/update-room.compon
     DataViewComponent,
     AddRoomComponent,
     UpdateRoomComponent,
-
+    GrundrissComponent,
+    StatusDialogComponent
   ],
   exports: [
     SensorsComponent,
@@ -50,7 +53,9 @@ import { UpdateRoomComponent } from './components/update-room/update-room.compon
     FormsModule,
     NgIf,
     NgForOf,
-
+    NgSwitch,
+    NgSwitchCase,
+    NgSwitchDefault,
   ]
 })
 export class DashboardModule {
