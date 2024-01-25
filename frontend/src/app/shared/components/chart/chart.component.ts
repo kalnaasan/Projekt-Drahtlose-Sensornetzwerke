@@ -1,18 +1,17 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {
-  ApexAnnotations,
   ApexAxisChartSeries,
   ApexChart,
   ApexDataLabels,
   ApexFill,
   ApexMarkers,
   ApexNonAxisChartSeries,
-  ApexTitleSubtitle,
-  ApexTooltip,
-  ApexXAxis
-} from 'ng-apexcharts';
-import {ValueMeasure} from "../../model/value-measure";
+  ApexTitleSubtitle, ApexTooltip, ApexXAxis
+} from "ng-apexcharts";
 import {ApiService} from "../../services/api.service";
+import {DatePipe} from "@angular/common";
+import {ValueMeasure} from "../../model/value-measure";
+
 
 @Component({
   selector: 'app-chart',
@@ -22,9 +21,15 @@ import {ApiService} from "../../services/api.service";
 export class ChartComponent implements OnInit {
   @Input() nameChart: any;
   @Input() srcData: any;
-  public data: any[]=[];
+  @Input() resolveStatus!: boolean;
+  @Output() message: EventEmitter<{ sensorName: string, status: string, value: number }> = new EventEmitter<{
+    sensorName: string,
+    status: string,
+    value: number
+  }>();
+  public data: any[] = [];
   public averageValues: number = 0;
-  public activeOptionButton = 'today';
+  public activeOptionButton = 'now';
   public minValue = 0;
   public minNormalValue = 0
   public maxNormalValue = 0
@@ -34,34 +39,6 @@ export class ChartComponent implements OnInit {
   chart: ApexChart = {
     type: 'area',
     height: 350
-  };
-  annotations: ApexAnnotations = {
-    yaxis: [
-      {
-        y: 30,
-        borderColor: '#999',
-        label: {
-          text: 'Support',
-          style: {
-            color: '#fff',
-            background: '#00E396'
-          }
-        }
-      }
-    ],
-    xaxis: [
-      {
-        x: new Date('14 Nov 2012').getTime(),
-        borderColor: '#999',
-        label: {
-          text: 'Rally',
-          style: {
-            color: '#fff',
-            background: '#775DD0'
-          }
-        }
-      }
-    ]
   };
   dataLabels: ApexDataLabels = {
     enabled: false
@@ -99,7 +76,7 @@ export class ChartComponent implements OnInit {
     },
     'today': {
       type: 'datetime',
-      min: new Date().setHours(0, 0, 0),
+      min: new Date().setHours(0, 0, 1),
       max: new Date().setHours(23, 59, 59),
       tickAmount: 6
     },
@@ -110,21 +87,34 @@ export class ChartComponent implements OnInit {
       tickAmount: 6
     }
   };
-  activeStatusOption: string = 'active';
 
-  constructor(private apiService: ApiService) {
+  constructor(private apiService: ApiService,
+              private datePipe: DatePipe) {
   }
 
   ngOnInit(): void {
-    const from = this.convertNumberToDate(this.updateOptionsData[this.activeOptionButton].min);
-    const to = this.convertNumberToDate(this.updateOptionsData[this.activeOptionButton].max);
+    const from = this.timestampToDate(this.updateOptionsData[this.activeOptionButton].min || Date.now());
+    console.log(from);
+    const to = this.timestampToDate(this.updateOptionsData[this.activeOptionButton].max || Date.now());
+    console.log(to);
     this.getData(from, to);
+    // console.log('Chart: ', this.nameChart, this.resolveStatus);
+
+  }
+
+  timestampToDate(timestamp: number): string | undefined {
+    const date = new Date(timestamp);
+    return this.datePipe.transform(date, 'yyyy-MM-ddTHH:mm:ss')?.toString();
+  }
+
+  addNewItem(sensorName: string, status: string, value: number) {
+    this.message.emit({sensorName: sensorName, status: status, value: value});
   }
 
   public updateOptions(option: any): void {
     this.activeOptionButton = option;
     this.xaxis = this.updateOptionsData[option];
-    if (this.activeOptionButton=== 'week'){
+    if (this.activeOptionButton === 'week') {
       const from = this.convertNumberToDate(this.updateOptionsData[this.activeOptionButton].min);
       const to = this.convertNumberToDate(this.updateOptionsData[this.activeOptionButton].max);
       this.getData(from, to);
@@ -152,8 +142,8 @@ export class ChartComponent implements OnInit {
     return [year, month, day].join('-');
   }
 
-  private getData(from: string, to: string){
-    if (this.nameChart !== null){
+  private getData(from: string | undefined, to: string | undefined) {
+    if (this.nameChart !== null) {
       this.apiService.getValueBySensorTypeAndDate(this.nameChart, from, to).subscribe({
         next: (res: any) => {
           this.data = this.convertDataToChartData(res.data);
@@ -163,33 +153,24 @@ export class ChartComponent implements OnInit {
             data: this.data
           }];
           this.averageValues = Math.round(this.calculateAverage());
-          if (this.nameChart.includes("temp")) {
+          if (this.nameChart.toLowerCase().includes("temp")) {
             // 16 - 18 - 24 - 26
-            this.minValue = 16;
-            this.minNormalValue = 18
-            this.maxNormalValue = 24
-            this.maxValue = 26;
-          } else if (this.nameChart.includes('hum')) {
-            this.minValue = 30;
-            this.minNormalValue = 40
-            this.maxNormalValue = 60
-            this.maxValue = 70;
-          } else if (this.nameChart.includes('voc')) {
+            this.setLimitValue(16, 18, 24, 26);
+          } else if (this.nameChart.toLowerCase().includes('hum')) {
+            // 30, 40, 60, 70
+            this.setLimitValue(30, 40, 60, 70);
+          } else if (this.nameChart.toLowerCase().includes('voc')) {
             // 50 - 51 - 100
-            this.minValue = 0;
-            this.minNormalValue = 0
-            this.maxNormalValue = 50
-            this.maxValue = 100;
-          } else if (this.nameChart.includes('co2')) {
+            this.setLimitValue(0, 0, 50, 100);
+          } else if (this.nameChart.toLowerCase().includes('co2')) {
             // 1000 - 1001 - 2000 -
-            this.minValue = 0;
-            this.minNormalValue = 0
-            this.maxNormalValue = 1000
-            this.maxValue = 2000;
+            this.setLimitValue(0, 0, 1000, 2000);
           }
+
           this.title = {
             text: this.nameChart
           };
+          this.calculateStatus();
         },
         error: (err: any) => console.log(err),
       });
@@ -197,6 +178,7 @@ export class ChartComponent implements OnInit {
     }
 
   }
+
   public calculateAverage(): number {
     /*let sum = 0;
     for (let i = 0; i < this.data.length; i++) {
@@ -204,5 +186,23 @@ export class ChartComponent implements OnInit {
     }
     return sum / this.data.length;*/
     return this.data[this.data.length - 1][1]
+  }
+
+  private setLimitValue(min: number, minNormal: number, maxNormal: number, max: number) {
+    this.minValue = min;
+    this.minNormalValue = minNormal;
+    this.maxNormalValue = maxNormal;
+    this.maxValue = max;
+  }
+
+  private calculateStatus() {
+    if (this.averageValues < this.minValue || this.averageValues > this.maxValue) {
+      this.addNewItem(this.nameChart, 'danger', this.averageValues);
+    } else if ((this.averageValues >= this.minValue && this.averageValues < this.minNormalValue) ||
+      (this.averageValues > this.maxNormalValue && this.averageValues < this.maxValue)) {
+      this.addNewItem(this.nameChart, 'success', this.averageValues);
+    } else if (this.averageValues >= this.minNormalValue && this.averageValues <= this.maxNormalValue) {
+      this.addNewItem(this.nameChart, 'warning', this.averageValues);
+    }
   }
 }

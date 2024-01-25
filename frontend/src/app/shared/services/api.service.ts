@@ -13,7 +13,7 @@ export class ApiService {
   constructor(private http: HttpClient) {
   }
 
-  public getValueBySensorTypeAndDate(sensorName: string, from: string, to: string): Observable<any> {
+  public getValueBySensorTypeAndDate(sensorName: string, from: string|undefined, to: string|undefined): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/values?sensor-name=${sensorName}&from=${from}&to=${to}`);
   }
   public getSensorsByRoom(roomId: string): Observable<any>{
