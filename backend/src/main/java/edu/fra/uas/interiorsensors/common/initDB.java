@@ -69,12 +69,13 @@ public class initDB {
 
     public void generateValues(Sensor sensor, Integer minValue, Integer maxValue) {
         Random random = new Random();
-        for (int i = 0; i < 96; i++) {
-            // Generiere eine Zufallszahl im Bereich [minValue, maxValue)
-            int randomInteger = random.nextInt((maxValue - minValue) + 1) + minValue;
-            LocalDateTime created = LocalDateTime.of(LocalDate.now().getYear(), LocalDate.now().getMonthValue(), LocalDate.now().getDayOfMonth(), i % 24, i % 60);
-            ValueMeasure valueMeasure = new ValueMeasure(null, randomInteger, created, sensor, created, created);
-            this.valueMeasureRepository.save(valueMeasure);
+        for (int i = 0; i < 24; i++) {
+            for (int j = 0; j < 60; j+=3) {
+                int randomInteger = random.nextInt((maxValue - minValue) + 1) + minValue;
+                LocalDateTime created = LocalDateTime.of(LocalDate.now().getYear(), LocalDate.now().getMonthValue(), LocalDate.now().getDayOfMonth(), i % 24, j % 60, j % 60);
+                ValueMeasure valueMeasure = new ValueMeasure(null, randomInteger, created, sensor, created, created);
+                this.valueMeasureRepository.save(valueMeasure);
+            }
         }
     }
 }
