@@ -98,8 +98,6 @@ export class ChartComponent implements OnInit {
     const to = this.timestampToDate(this.updateOptionsData[this.activeOptionButton].max || Date.now());
     console.log(to);
     this.getData(from, to);
-    // console.log('Chart: ', this.nameChart, this.resolveStatus);
-
   }
 
   timestampToDate(timestamp: number): string | undefined {
@@ -115,8 +113,12 @@ export class ChartComponent implements OnInit {
     this.activeOptionButton = option;
     this.xaxis = this.updateOptionsData[option];
     if (this.activeOptionButton === 'week') {
-      const from = this.convertNumberToDate(this.updateOptionsData[this.activeOptionButton].min);
-      const to = this.convertNumberToDate(this.updateOptionsData[this.activeOptionButton].max);
+      const from = this.timestampToDate(this.updateOptionsData[this.activeOptionButton].min || Date.now());
+      const to = this.timestampToDate(this.updateOptionsData[this.activeOptionButton].max || Date.now());
+      this.getData(from, to);
+    } else if (this.activeOptionButton === 'today') {
+      const from = this.timestampToDate(this.updateOptionsData[this.activeOptionButton].min || Date.now());
+      const to = this.timestampToDate(this.updateOptionsData[this.activeOptionButton].max || Date.now());
       this.getData(from, to);
     }
   }
@@ -128,18 +130,6 @@ export class ChartComponent implements OnInit {
       return src.map((valueMeasure: ValueMeasure) => [Date.parse(valueMeasure.readAt), Math.round(valueMeasure.value / 10)]);
     }
     return src.map((valueMeasure: ValueMeasure) => [Date.parse(valueMeasure.readAt), valueMeasure.value]);
-  }
-
-  private convertNumberToDate(value: any) {
-    let d = new Date(value),
-      month = '' + (d.getMonth() + 1),
-      day = '' + d.getDate(),
-      year = d.getFullYear();
-
-    month = (month.length < 2) ? '0' + month : month;
-    day = (day.length < 2) ? '0' + day : day;
-
-    return [year, month, day].join('-');
   }
 
   private getData(from: string | undefined, to: string | undefined) {
