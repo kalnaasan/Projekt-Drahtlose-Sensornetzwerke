@@ -36,16 +36,9 @@ export class ChartComponent implements OnInit {
   public maxValue = 0;
   series: ApexAxisChartSeries | ApexNonAxisChartSeries = [];
   title: ApexTitleSubtitle = {};
-  chart: ApexChart = {
-    type: 'area',
-    height: 350
-  };
-  dataLabels: ApexDataLabels = {
-    enabled: false
-  };
-  markers: ApexMarkers = {
-    size: 0
-  };
+  chart: ApexChart = {type: 'area', height: 350};
+  dataLabels: ApexDataLabels = {enabled: false};
+  markers: ApexMarkers = {size: 0};
   xaxis: ApexXAxis = {
     type: 'datetime',
     min: undefined,
@@ -94,9 +87,7 @@ export class ChartComponent implements OnInit {
 
   ngOnInit(): void {
     const from = this.timestampToDate(this.updateOptionsData[this.activeOptionButton].min || Date.now());
-    console.log(from);
     const to = this.timestampToDate(this.updateOptionsData[this.activeOptionButton].max || Date.now());
-    console.log(to);
     this.getData(from, to);
   }
 
@@ -112,24 +103,18 @@ export class ChartComponent implements OnInit {
   public updateOptions(option: any): void {
     this.activeOptionButton = option;
     this.xaxis = this.updateOptionsData[option];
-    if (this.activeOptionButton === 'week') {
-      const from = this.timestampToDate(this.updateOptionsData[this.activeOptionButton].min || Date.now());
-      const to = this.timestampToDate(this.updateOptionsData[this.activeOptionButton].max || Date.now());
-      this.getData(from, to);
-    } else if (this.activeOptionButton === 'today') {
-      const from = this.timestampToDate(this.updateOptionsData[this.activeOptionButton].min || Date.now());
-      const to = this.timestampToDate(this.updateOptionsData[this.activeOptionButton].max || Date.now());
-      this.getData(from, to);
-    }
+    const from = this.timestampToDate(this.updateOptionsData[this.activeOptionButton].min || Date.now());
+    const to = this.timestampToDate(this.updateOptionsData[this.activeOptionButton].max || Date.now());
+    this.getData(from, to)
   }
 
   private convertDataToChartData(src: ValueMeasure[]) {
-    if (this.nameChart.includes('temp') || this.nameChart.includes('hum')) {
+    if (this.nameChart.toLowerCase().includes('temp') || this.nameChart.includes('hum')) {
       return src.map((valueMeasure: ValueMeasure) => [Date.parse(valueMeasure.readAt), Math.round(valueMeasure.value / 1000)]);
-    } else if (this.nameChart.includes('voc')) {
+    } else if (this.nameChart.toLowerCase().includes('voc')) {
       return src.map((valueMeasure: ValueMeasure) => [Date.parse(valueMeasure.readAt), Math.round(valueMeasure.value / 10)]);
     }
-    return src.map((valueMeasure: ValueMeasure) => [Date.parse(valueMeasure.readAt), valueMeasure.value]);
+    return src.map((valueMeasure: ValueMeasure) => [Date.parse(valueMeasure.readAt), Math.round(valueMeasure.value)]);
   }
 
   private getData(from: string | undefined, to: string | undefined) {
@@ -156,10 +141,7 @@ export class ChartComponent implements OnInit {
             // 1000 - 1001 - 2000 -
             this.setLimitValue(0, 0, 1000, 2000);
           }
-
-          this.title = {
-            text: this.nameChart
-          };
+          this.title = {text: this.nameChart};
           this.calculateStatus();
         },
         error: (err: any) => console.log(err),
