@@ -36,6 +36,9 @@ public class ValueMeasure {
     @Column(name = "read_at")
     private LocalDateTime readAt;
 
+    @Column(name = "type")
+    private String type;
+
     @JsonIgnore
     @ManyToOne(targetEntity = Sensor.class)
     @JoinColumn(name = "sensor_id")
