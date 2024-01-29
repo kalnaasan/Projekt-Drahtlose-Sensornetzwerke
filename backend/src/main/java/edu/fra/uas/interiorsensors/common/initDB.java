@@ -37,11 +37,11 @@ public class initDB {
     @PostConstruct
     private void init() {
         if (this.activeProfile.equals("dev")) {
-            Room room1 = this.roomRepository.save(new Room(null, "Room 1", new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
+            Room room1 = this.roomRepository.save(new Room(null, "Room 1", new ArrayList<>(),null, LocalDateTime.now(), LocalDateTime.now()));
             this.genrateSensorsOfRoom(room1, "123456");
-            Room room2 = this.roomRepository.save(new Room(null, "Room 2", new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
+            Room room2 = this.roomRepository.save(new Room(null, "Room 2", new ArrayList<>(),null, LocalDateTime.now(), LocalDateTime.now()));
             this.genrateSensorsOfRoom(room2, "456789");
-            Room room3 = this.roomRepository.save(new Room(null, "Room 3", new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
+            Room room3 = this.roomRepository.save(new Room(null, "Room 3", new ArrayList<>(),null, LocalDateTime.now(), LocalDateTime.now()));
             this.genrateSensorsOfRoom(room3, "789123");
            // Room room4 = this.roomRepository.save(new Room(null, "Room 4", new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
             this.genrateSensorsOfRoom(null, "147258");
