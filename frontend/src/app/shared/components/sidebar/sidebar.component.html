@@ -1,13 +1,12 @@
 <mat-drawer-container class="container-fluid sidenav-container" autosize>
   <mat-drawer [opened]="sideBarOpen" class="sidebar" mode="side">
     <ul class="nav">
-      <li *ngFor="let item of routeItems">
+      <li *ngFor="let item of routeItems" class="d-flex align-items-center">
         <a [routerLink]="[item.link]">
           <mat-icon>{{item.icon}}</mat-icon>
           <span>{{item.name}}</span>
         </a>
         <mat-icon (click)="updateRaum(item)">edit</mat-icon>
-
       </li>
     </ul>
 
