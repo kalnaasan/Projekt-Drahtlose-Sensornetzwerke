@@ -1,0 +1,37 @@
+<div class="card rounded-3">
+  <div class="card-header h4 text-center">Quality of Air</div>
+  <div class="card-body">
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-12">
+          <table class="table table-bordered table-striped table-hover">
+            <thead>
+            <tr>
+              <th scope="col">Sensor-name</th>
+              <th scope="col">Current-Value</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr *ngFor="let item of data" class="table-{{item.status.toLocaleLowerCase()}}">
+              <td>{{ item.sensorName }}</td>
+              <td>{{ item.value }}
+                <span *ngIf="item.sensorName.toLowerCase().includes('co2')">PPM</span>
+                <span *ngIf="item.sensorName.toLowerCase().includes('hum')">%</span>
+                <span *ngIf="item.sensorName.toLowerCase().includes('temp')">°C</span>
+                <span *ngIf="item.sensorName.toLowerCase().includes('voc')">index</span>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="row"></div>
+    </div>
+    <p class="bg-success rounded-3 p-3 h4 mt-5" *ngIf="status==='success'">The Quality of Air is good</p>
+    <p class="bg-warning rounded-3 p-3 h4 mt-5" *ngIf="status==='warning'">It is recommended to ventilate room</p>
+    <p class="bg-danger rounded-3 p-3 h4 mt-5" *ngIf="status==='danger'">The room must be ventilated immediately</p>
+  </div>
+  <div class="card-footer">
+    <button class="btn btn-primary rounded-3" (click)="onNoClick()" cdkFocusInitial>Close</button>
+  </div>
+</div>

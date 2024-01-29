@@ -1,12 +1,15 @@
 #include <zephyr/net/openthread.h>
 #include <openthread/thread.h>
 #include <openthread/coap.h>
-// #include <zephyr/data/json.h>
 #include <stdio.h>
 #include "sensor_functionality.h"
 
-#define SLEEP_TIME_MS 1000
 #define TEXTBUFFER_SIZE 256
+
+#define STACK_SIZE 1024
+#define SLEEP_TIME_SECONDS 60
+
+/* CoAP */
 
 const char *serverIpAddr = "fdda:72bc:8975:2:0:0:10.80.2.239";
 
@@ -14,40 +17,85 @@ void coap_init(void);
 void coap_send_data_response_cb(void *p_context, otMessage *p_message, const otMessageInfo *p_message_info, otError result);
 void coap_send_data_request(char *message);
 
+/* Multi-Threading */
+
+K_THREAD_STACK_DEFINE(sensor_stack, STACK_SIZE);
+struct k_thread sensor_thread_data;
+
+K_THREAD_STACK_DEFINE(coap_stack, STACK_SIZE);
+struct k_thread coap_thread_data;
+
+struct k_mutex data_mutex;
+struct k_condvar data_ready_cv;
+
+bool coap_data_ready = false;
+
+void sensor_thread_entry(void) {
+    while (1) {
+        k_mutex_lock(&data_mutex, K_FOREVER);
+        
+		read_measurement();
+		print_measurement();
+
+        coap_data_ready = true;
+        k_condvar_signal(&data_ready_cv);
+        k_mutex_unlock(&data_mutex);
+
+		k_sleep(K_SECONDS(SLEEP_TIME_SECONDS));
+    }
+}
+
+void coap_thread_entry(void) {
+    while (1) {
+		k_mutex_lock(&data_mutex, K_FOREVER);
+        
+		while (!coap_data_ready) {
+            // Wait for sensor data to be ready
+            k_condvar_wait(&data_ready_cv, &data_mutex, K_FOREVER);
+        }
+
+        // Use shared_data for CoAP communication
+        const char* my_sensor_data= (char*)malloc(TEXTBUFFER_SIZE * sizeof(char));
+		my_sensor_data = create_coap_message();
+		coap_send_data_request(my_sensor_data);
+		free(my_sensor_data);
+
+        coap_data_ready = false;
+        k_mutex_unlock(&data_mutex);
+    }
+}
+
+
+
 void main(void)
 {
 	int16_t error = 0;
-	/*
-	SCD41_co2 = 1135;
-	SCD41_temperature = 23431;
-	SCD41_humidity = 44123;
-	SVM41_humidity = 39600;
-	SVM41_temperature = 23880;
-	SVM41_voc_index = 325;
-	SVM41_nox_index = 18;
-	*/
-
+	
 	/* Init I2C, SC41, SVM41 */
 	sensirion_i2c_hal_init();
 	clean_up_sensor_states(error);
-	s_state = SENSOR_INIT;
 
 	/* Start periodic measurement */
 	start_measurement(error);
-	s_state = PERIODIC_MEASURING;
+	k_sleep(K_SECONDS(10));
+	
 	coap_init();
 
-	k_msleep(SLEEP_TIME_MS); // for safety
+	k_mutex_init(&data_mutex);
+    k_condvar_init(&data_ready_cv);
 
-	while (true)
-	{
-		/* Read Measurement */
-		read_measurement();
-		print_measurement();
-		const char* my_sensor_data = create_coap_message();
-		coap_send_data_request(my_sensor_data);
-		k_msleep(5000);
-	}
+	k_tid_t sensor_thread_id = k_thread_create(&sensor_thread_data, sensor_stack, STACK_SIZE,
+                                               sensor_thread_entry, NULL, NULL, NULL, 0, 
+											   K_PRIO_COOP(0), K_NO_WAIT);
+
+    k_tid_t coap_thread_id = k_thread_create(&coap_thread_data, coap_stack, STACK_SIZE,
+                                             coap_thread_entry, NULL, NULL, NULL, 0, 
+											 K_PRIO_COOP(0), K_NO_WAIT);
+
+    k_thread_start(sensor_thread_id);
+    k_thread_start(coap_thread_id);
+
+    k_sleep(K_FOREVER);
 }
 
 void coap_init(void)

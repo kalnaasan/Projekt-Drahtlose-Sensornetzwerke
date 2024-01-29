@@ -10,7 +10,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -32,8 +34,18 @@ public class ValueMeasureController {
                                                  @RequestParam(value = "from") String from,
                                                  @RequestParam(value = "to") String to) {
         log.debug("Indexing ValueMeasure : {}", this.valueMeasureRepository.count());
-        LocalDateTime fromDate = LocalDateTime.parse(from + "T00:00:00");
-        LocalDateTime toDate = LocalDateTime.parse(to + "T23:59:59");
+        LocalDateTime fromDate = LocalDateTime.parse(from);
+        LocalDateTime toDate = LocalDateTime.parse(to);
+        if ((toDate.getHour() - fromDate.getHour() > 12)) {
+            List<Object[]> values = valueMeasureRepository.findAllBySensor_NameAndReadAtBetweenAndAverageReadAtOrderByReadAt(sensorName, fromDate, toDate);
+            List<ValueMeasure> valueMeasures = new ArrayList<>();
+            for (Object[] value : values) {
+                valueMeasures.add(new ValueMeasure(null, (Double) value[1], fromDate.plusHours((Integer) value[0]), null, null, null));
+            }
+            return this.message("Indexing Values", valueMeasures, HttpStatus.OK);
+        } else if (Duration.between(fromDate,toDate).toDays() == 7) {
+            return this.message("Indexing Values", this.getValueMeasureByWeek(sensorName, fromDate), HttpStatus.OK);
+        }
         List<ValueMeasure> values = valueMeasureRepository.findAllBySensor_NameAndReadAtBetweenOrderByReadAtAsc(sensorName, fromDate, toDate);
         return this.message("Indexing Values", values, HttpStatus.OK);
     }
@@ -87,7 +99,7 @@ public class ValueMeasureController {
         Optional<ValueMeasure> ValueMeasureUpdate = this.valueMeasureRepository.findById(id);
 
         if (ValueMeasureUpdate.isPresent()) {
-            //this.valueMeasureRepository.deleteById(id);
+            this.valueMeasureRepository.deleteById(id);
             return this.message("ValueMeasure is deleted", null, HttpStatus.NO_CONTENT);
         }
         return this.message("ValueMeasure is not found", null, HttpStatus.NO_CONTENT);
@@ -95,5 +107,18 @@ public class ValueMeasureController {
 
     private ResponseEntity<ResponseMessage> message(String message, Object data, HttpStatus httpStatus) {
         return new ResponseEntity<>(new ResponseMessage(message, data), httpStatus);
+    }
+
+    private List<ValueMeasure> getValueMeasureByWeek(String sensorName, LocalDateTime start){
+        List<ValueMeasure> valueMeasures = new ArrayList<>();
+        for (int i = 0; i <8; i++){
+            LocalDateTime from = start.plusDays(i);
+            LocalDateTime to = start.plusDays((i+1));
+            List<Object[]> values = valueMeasureRepository.findAllBySensor_NameAndReadAtBetweenAndAverageByFourHours_ReadAtOrderByReadAt(sensorName, from, to);
+            for (Object[] value : values) {
+                valueMeasures.add(new ValueMeasure(null, (Double) value[1], from.plusHours((Integer) value[0]), null, null, null));
+            }
+        }
+        return valueMeasures;
     }
 }

@@ -7,14 +7,17 @@ import edu.fra.uas.interiorsensors.repository.RoomRepository;
 import edu.fra.uas.interiorsensors.repository.SensorRepository;
 import edu.fra.uas.interiorsensors.repository.ValueMeasureRepository;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Random;
 
+@Slf4j
 @Component
 public class initDB {
 
@@ -46,78 +49,33 @@ public class initDB {
             this.sensorRepository.save(new Sensor(null, "369258_SD41_TEMP", "TEMP", null, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
             this.sensorRepository.save(new Sensor(null, "369258_SD41_CO2", "CO2", null, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
             this.sensorRepository.save(new Sensor(null, "369258_SD41_HM", "HM", null, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
-            this.sensorRepository.save(new Sensor(null, "369258_SD41_VOC", "VOC", null, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));    
+            this.sensorRepository.save(new Sensor(null, "369258_SD41_VOC", "VOC", null, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
         }
     }
 
     private void genrateSensorsOfRoom(Room room, String board) {
         Sensor SD41_TEMP = this.sensorRepository.save(new Sensor(null, board + "_SD41_TEMP", "TEMP", room, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
-        this.genrateTemperatureValues(SD41_TEMP);
+        this.generateValues(SD41_TEMP, 12, 29);
+
         Sensor SD41_CO2 = this.sensorRepository.save(new Sensor(null, board + "_SD41_CO2", "CO2", room, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
-        this.genrateCO2Values(SD41_CO2);
+        this.generateValues(SD41_CO2, 500, 2500);
+
         Sensor SD41_HM = this.sensorRepository.save(new Sensor(null, board + "_SD41_HM", "HM", room, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
-        this.genrateHumidityValues(SD41_HM);
+        this.generateValues(SD41_HM, 30, 80);
+
         Sensor SD41_VOC = this.sensorRepository.save(new Sensor(null, board + "_SD41_VOC", "VOC", room, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
-        this.genrateVOCValues(SD41_VOC);
+        this.generateValues(SD41_VOC, 20, 120);
     }
 
-    private void genrateTemperatureValues(Sensor sensor) {
-        // Erstelle eine Instanz der Random-Klasse
+    public void generateValues(Sensor sensor, Integer minValue, Integer maxValue) {
         Random random = new Random();
-        // Definiere den gewünschten Bereich
-        double minValue = 10.0;
-        double maxValue = 25.0;
-        for (int i = 0; i < 720; i++) {
-            // Generiere eine Zufallszahl im Bereich [minValue, maxValue)
-            double randomDouble = Math.round((minValue + (maxValue - minValue) * random.nextDouble()) * 100.0) / 100.0;
-            LocalDateTime created = LocalDateTime.of(2024, 1, 2 + i / 24, i % 24, 0);
-            ValueMeasure valueMeasure = new ValueMeasure(null, randomDouble, created, sensor, created, created);
-            this.valueMeasureRepository.save(valueMeasure);
-        }
-    }
-
-    private void genrateCO2Values(Sensor sensor) {
-        // Erstelle eine Instanz der Random-Klasse
-        Random random = new Random();
-        // Definiere den gewünschten Bereich
-        int minValue = 500;
-        int maxValue = 2500;
-        for (int i = 0; i < 720; i++) {
-            // Generiere eine Zufallszahl im Bereich [minValue, maxValue)
-            int randomInteger = random.nextInt((maxValue - minValue) + 1) + minValue;
-            LocalDateTime created = LocalDateTime.of(2024, 1, 2 + i / 24, i % 24, 0);
-            ValueMeasure valueMeasure = new ValueMeasure(null, randomInteger, created, sensor, created, created);
-            this.valueMeasureRepository.save(valueMeasure);
-        }
-    }
-
-    private void genrateHumidityValues(Sensor sensor) {
-        // Erstelle eine Instanz der Random-Klasse
-        Random random = new Random();
-        // Definiere den gewünschten Bereich
-        int minValue = 30;
-        int maxValue = 80;
-        for (int i = 0; i < 720; i++) {
-            // Generiere eine Zufallszahl im Bereich [minValue, maxValue)
-            int randomInteger = random.nextInt((maxValue - minValue) + 1) + minValue;
-            LocalDateTime created = LocalDateTime.of(2024, 1, 2 + i / 24, i % 24, 0);
-            ValueMeasure valueMeasure = new ValueMeasure(null, randomInteger, created, sensor, created, created);
-            this.valueMeasureRepository.save(valueMeasure);
-        }
-    }
-
-    private void genrateVOCValues(Sensor sensor) {
-        // Erstelle eine Instanz der Random-Klasse
-        Random random = new Random();
-        // Definiere den gewünschten Bereich
-        int minValue = 20;
-        int maxValue = 120;
-        for (int i = 0; i < 720; i++) {
-            // Generiere eine Zufallszahl im Bereich [minValue, maxValue)
-            int randomInteger = random.nextInt((maxValue - minValue) + 1) + minValue;
-            LocalDateTime created = LocalDateTime.of(2024, 1, 2 + i / 24, i % 24, 0);
-            ValueMeasure valueMeasure = new ValueMeasure(null, randomInteger, created, sensor, created, created);
-            this.valueMeasureRepository.save(valueMeasure);
+        for (int i = 0; i < 24; i++) {
+            for (int j = 0; j < 60; j+=3) {
+                int randomInteger = random.nextInt((maxValue - minValue) + 1) + minValue;
+                LocalDateTime created = LocalDateTime.of(LocalDate.now().getYear(), LocalDate.now().getMonthValue(), LocalDate.now().getDayOfMonth(), i % 24, j % 60, j % 60);
+                ValueMeasure valueMeasure = new ValueMeasure(null, randomInteger, created, sensor, created, created);
+                this.valueMeasureRepository.save(valueMeasure);
+            }
         }
     }
 }

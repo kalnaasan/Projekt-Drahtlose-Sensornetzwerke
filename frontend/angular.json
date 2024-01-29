@@ -36,7 +36,9 @@
             ],
             "scripts": [
               "node_modules/bootstrap/dist/js/bootstrap.bundle.min.js",
-              "node_modules/apexcharts/dist/apexcharts.min.js"
+              "node_modules/apexcharts/dist/apexcharts.min.js",
+              "node_modules/d3/dist/d3.js",
+              "node_modules/d3-scale/dist/d3-scale.js"
             ]
           },
           "configurations": {
