@@ -13,15 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Limit;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +25,7 @@ import java.util.stream.Collectors;
 @CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("rooms")
-public class RoomController implements BaseController<Room> {
+public class RoomController {
 
     private final RoomRepository roomRepository;
     private final SensorRepository sensorRepository;
@@ -48,15 +40,17 @@ public class RoomController implements BaseController<Room> {
     }
 
     @GetMapping
-    @Override
-    public ResponseEntity<ResponseMessage> index() {
+    public ResponseEntity<ResponseMessage> index(@RequestParam (value = "shape",defaultValue = "false") boolean shape) {
         log.debug("Indexing Room : {}", this.roomRepository);
-        List<Room> rooms = roomRepository.findAllByOrderByNameAsc();
+        if (shape == false) {
+            List<Room> rooms = roomRepository.findAllByOrderByNameAsc();
+            return this.message("Indexing Room", rooms, HttpStatus.OK);
+        }
+        List<Room> rooms = roomRepository.findAllByShape_idIsNullOrderByNameAsc();
         return this.message("Indexing Room", rooms, HttpStatus.OK);
     }
 
     @GetMapping("/{id}")
-    @Override
     public ResponseEntity<ResponseMessage> getById(@PathVariable UUID id) {
         log.debug("Getting User by id: {} ", id);
         Optional<Room> optionalRoom = this.roomRepository.findById(id);
@@ -66,7 +60,6 @@ public class RoomController implements BaseController<Room> {
     }
 
     @PostMapping
-    @Override
     public ResponseEntity<ResponseMessage> create(@RequestBody Room room) {
         log.debug("create room: {}", room);
         Optional<Room> optionalRoom = (room.getId() != null) ? this.roomRepository.findById(room.getId()) : Optional.empty();
@@ -87,7 +80,6 @@ public class RoomController implements BaseController<Room> {
 
 
     @PutMapping("/{id}")
-    @Override
     public ResponseEntity<ResponseMessage> update(@PathVariable("id") UUID id, @RequestBody Room room) {
         log.debug("Updating User by id: {}", id);
         Optional<Room> optionalRoom = this.roomRepository.findById(id);
@@ -105,7 +97,6 @@ public class RoomController implements BaseController<Room> {
     }
 
     @DeleteMapping("/{id}")
-    @Override
     public ResponseEntity<ResponseMessage> delete(@PathVariable("id") UUID id) {
         log.debug("Deleting Room by id: {}", id);
         Optional<Room> roomUpdate = this.roomRepository.findById(id);
