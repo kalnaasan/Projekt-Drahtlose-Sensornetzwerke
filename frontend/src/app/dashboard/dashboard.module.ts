@@ -18,7 +18,9 @@ import {NgForOf, NgIf, NgSwitch, NgSwitchCase, NgSwitchDefault} from "@angular/c
 import {RoomComponent} from './components/room/room.component';
 import {UpdateRoomComponent} from './components/update-room/update-room.component';
 import {GrundrissComponent} from './components/grundriss/grundriss.component';
-import { StatusDialogComponent } from './components/status-dialog/status-dialog.component';
+import {StatusDialogComponent} from './components/status-dialog/status-dialog.component';
+import {PlanDialogComponent} from './components/plan-dialog/plan-dialog.component';
+import {MatIconModule} from "@angular/material/icon";
 
 
 @NgModule({
@@ -31,7 +33,8 @@ import { StatusDialogComponent } from './components/status-dialog/status-dialog.
     AddRoomComponent,
     UpdateRoomComponent,
     GrundrissComponent,
-    StatusDialogComponent
+    StatusDialogComponent,
+    PlanDialogComponent
   ],
   exports: [
     SensorsComponent,
@@ -56,6 +59,7 @@ import { StatusDialogComponent } from './components/status-dialog/status-dialog.
     NgSwitch,
     NgSwitchCase,
     NgSwitchDefault,
+    MatIconModule,
   ]
 })
 export class DashboardModule {
