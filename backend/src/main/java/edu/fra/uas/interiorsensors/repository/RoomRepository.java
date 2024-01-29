@@ -11,6 +11,6 @@ import java.util.UUID;
 @Repository
 public interface RoomRepository extends JpaRepository<Room, UUID> {
     boolean existsByName(String name);
-
+    List<Room> findAllByShape_idIsNullOrderByNameAsc();
     List<Room> findAllByOrderByNameAsc();
 }
