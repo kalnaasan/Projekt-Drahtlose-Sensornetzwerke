@@ -1,6 +1,5 @@
 package edu.fra.uas.interiorsensors.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.persistence.*;
@@ -37,11 +36,6 @@ public class Room {
 
     @OneToMany(targetEntity = Sensor.class, mappedBy = "room")
     private List<Sensor> sensors = new ArrayList<>();
-
-    @JsonIgnore
-    @ManyToOne(cascade = CascadeType.MERGE, fetch = FetchType.LAZY)
-    @JoinColumn(name = "shape_id")
-    private Shape shape;
 
     @CreationTimestamp
     @Column(name = "created_at")
