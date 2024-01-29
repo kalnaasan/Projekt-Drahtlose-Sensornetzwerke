@@ -2,15 +2,15 @@ package edu.fra.uas.interiorsensors.controller;
 
 
 import edu.fra.uas.interiorsensors.common.ResponseMessage;
-import edu.fra.uas.interiorsensors.model.Room;
-import edu.fra.uas.interiorsensors.model.Sensor;
+import edu.fra.uas.interiorsensors.model.*;
 import edu.fra.uas.interiorsensors.repository.RoomRepository;
 
 import edu.fra.uas.interiorsensors.repository.SensorRepository;
 
+import edu.fra.uas.interiorsensors.repository.ValueMeasureRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Limit;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -38,10 +38,13 @@ public class RoomController implements BaseController<Room> {
     private final RoomRepository roomRepository;
     private final SensorRepository sensorRepository;
 
+    private final ValueMeasureRepository valueMeasureRepository;
+
     @Autowired
-    public RoomController(RoomRepository roomRepository, SensorRepository sensorRepository) {
+    public RoomController(RoomRepository roomRepository, SensorRepository sensorRepository, ValueMeasureRepository valueMeasureRepository) {
         this.roomRepository = roomRepository;
         this.sensorRepository = sensorRepository;
+        this.valueMeasureRepository = valueMeasureRepository;
     }
 
     @GetMapping
@@ -112,6 +115,28 @@ public class RoomController implements BaseController<Room> {
             return this.message("Room is deleted", null, HttpStatus.NO_CONTENT);
         }
         return this.message("Room is not found", null, HttpStatus.NO_CONTENT);
+    }
+
+    @GetMapping("/{id}/sensors")
+    public ResponseEntity<ResponseMessage> getSensors(@PathVariable("id") UUID id) {
+        Room room = roomRepository.findById(id).orElse(null);
+        if (room == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        List<Sensor> sensors = room.getSensors();
+        List<ValueMeasureDTO> values = new ArrayList<>();
+
+        for (Sensor sensor : sensors) {
+            List<ValueMeasure> sensorValues = sensor.getValueMeasures();
+            if (!sensorValues.isEmpty()) {
+                ValueMeasure lastValue = this.valueMeasureRepository.findAllBySensor_IdOrderByReadAtDesc(sensor.getId(), Limit.of(1)).get(0);
+                ValueMeasureDTO lastValueDTO = new ValueMeasureDTO(null, lastValue.getValue(), lastValue.getReadAt(), lastValue.getCreatedAt(), lastValue.getUpdatedAt(),sensor.getType());
+                values.add(lastValueDTO);
+            }
+        }
+        BoardDTO boardDTO = new BoardDTO(sensors.get(0).getName().split("_")[0],values);
+        return this.message("current values of Sensor",boardDTO,HttpStatus.OK);
     }
 
     private ResponseEntity<ResponseMessage> message(String message, Object data, HttpStatus httpStatus) {
