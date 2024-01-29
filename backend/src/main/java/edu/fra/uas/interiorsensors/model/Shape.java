@@ -40,6 +40,9 @@ public class Shape {
     @OneToMany(targetEntity = Element.class, mappedBy = "shape")
     private List<Element> elements;
 
+    @OneToMany(targetEntity = Room.class, mappedBy = "shape")
+    private List<Room> rooms;
+
     @CreationTimestamp
     @Column(name = "created_at")
     private LocalDateTime createdAt;
