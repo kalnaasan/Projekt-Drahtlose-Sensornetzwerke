@@ -13,8 +13,8 @@ export class RoomService {
   constructor(private http: HttpClient) {
   }
 
-  getAllRooms(): Observable<Room[]> {
-    return this.http.get<Room[]>(this.apiUrl);
+  getAllRooms(withShape: boolean = false): Observable<Room[]> {
+    return this.http.get<Room[]>(`${this.apiUrl}?shape=${withShape}`);
   }
 
   getRoomById(id: string): Observable<Room> {
