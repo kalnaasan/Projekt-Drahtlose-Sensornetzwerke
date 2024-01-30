@@ -4,6 +4,8 @@ logging:
     edu.fra.uas.coap.server: debug
 # Mysql connection:
 spring:
+  profiles:
+    active: dev
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/sensor?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
