@@ -4,6 +4,8 @@
 
 #include "sensirion_config.h"
 
+/* FOR STATE MACHINES
+
 typedef enum{
     SLEEP,
 	SENSOR_INIT,
@@ -12,6 +14,7 @@ typedef enum{
 
 static sensor_state s_state = SLEEP;
 
+*/
 /* for now, data is stored like this, will be omitted later*/
 static uint16_t SCD41_co2;
 static int32_t SCD41_temperature;
