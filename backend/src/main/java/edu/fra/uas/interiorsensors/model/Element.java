@@ -39,18 +39,18 @@ public class Element {
     private ElementType type;
 
     @Column(name = "start")
-    private Integer start;
+    private String start;
 
     @Column(name = "end")
-    private Integer end;
+    private String end;
 
     @JsonIgnore
     @ManyToOne(cascade = CascadeType.MERGE, fetch = FetchType.LAZY)
     @JoinColumn(name = "shape_id")
     private Shape shape;
 
-    @OneToOne(cascade = CascadeType.MERGE ,fetch = FetchType.LAZY)
-    @JoinColumn(name = "room_id")
+    @OneToOne(cascade = CascadeType.MERGE, fetch = FetchType.LAZY)
+    @JoinColumn(name = "room_id", referencedColumnName = "id")
     private Room room;
 
     @CreationTimestamp
