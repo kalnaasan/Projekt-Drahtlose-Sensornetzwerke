@@ -5,6 +5,7 @@ import {RoomComponent} from "./components/room/room.component";
 import {AddRoomComponent} from "./components/add-room/add-room.component";
 import {UpdateRoomComponent} from "./components/update-room/update-room.component";
 import {GrundrissComponent} from './components/grundriss/grundriss.component';
+import {PlanDialogComponent} from "./components/plan-dialog/plan-dialog.component";
 
 const routes: Routes = [
   {path: 'home', component: HomeComponent, pathMatch: 'full'},
@@ -12,6 +13,7 @@ const routes: Routes = [
   {path: 'rooms/edit/:id', component: UpdateRoomComponent, pathMatch: 'full'},
   {path: 'rooms/:id', component: RoomComponent, pathMatch: 'full'},
   {path: 'grundriss', component: GrundrissComponent, pathMatch: 'full'},
+  {path: 'grundriss/create', component: PlanDialogComponent, pathMatch: 'full'},
   {path: '', redirectTo: 'home', pathMatch: 'full'},
 ];
 
