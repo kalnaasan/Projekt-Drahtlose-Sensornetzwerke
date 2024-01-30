@@ -1,12 +1,12 @@
+#include <zephyr/smf.h>
 #include <zephyr/net/openthread.h>
 #include <openthread/thread.h>
 #include <openthread/coap.h>
 #include <stdio.h>
+
 #include "sensor_functionality.h"
 
 #define TEXTBUFFER_SIZE 256
-
-#define STACK_SIZE 1024
 #define SLEEP_TIME_SECONDS 60
 
 /* CoAP */
@@ -17,85 +17,135 @@ void coap_init(void);
 void coap_send_data_response_cb(void *p_context, otMessage *p_message, const otMessageInfo *p_message_info, otError result);
 void coap_send_data_request(char *message);
 
-/* Multi-Threading */
+/* SMF */
 
-K_THREAD_STACK_DEFINE(sensor_stack, STACK_SIZE);
-struct k_thread sensor_thread_data;
+int32_t smf_sleep_sec = 0;
 
-K_THREAD_STACK_DEFINE(coap_stack, STACK_SIZE);
-struct k_thread coap_thread_data;
+static const struct smf_state states[];
 
-struct k_mutex data_mutex;
-struct k_condvar data_ready_cv;
+enum state { INIT, START_MEASUREMENT, READ_MEASUREMENT, SEND_DATA, IDLE_MODE};
 
-bool coap_data_ready = false;
+struct s_object {
+	/* First */
+	int16_t error;
 
-void sensor_thread_entry(void) {
-    while (1) {
-        k_mutex_lock(&data_mutex, K_FOREVER);
-        
-		read_measurement();
-		print_measurement();
+	struct smf_ctx;
+	/* other state specific data add here */
+} s_obj;
 
-        coap_data_ready = true;
-        k_condvar_signal(&data_ready_cv);
-        k_mutex_unlock(&data_mutex);
+/* State INIT */
+static void init_run(void *o){
+	printk("INIT\n");
 
-		k_sleep(K_SECONDS(SLEEP_TIME_SECONDS));
-    }
+	struct s_object *s = (struct s_object *)o;
+	s->error = 0;
+
+	/* Init I2C, SC41, SVM41 */
+	sensirion_i2c_hal_init();
+	clean_up_sensor_states(s->error);
+
+	/* Init CoAP */
+	coap_init();
+
+	smf_sleep_sec = 0;
+	smf_set_state(SMF_CTX(&s_obj), &states[START_MEASUREMENT]);
 }
 
-void coap_thread_entry(void) {
-    while (1) {
-		k_mutex_lock(&data_mutex, K_FOREVER);
-        
-		while (!coap_data_ready) {
-            // Wait for sensor data to be ready
-            k_condvar_wait(&data_ready_cv, &data_mutex, K_FOREVER);
-        }
-
-        // Use shared_data for CoAP communication
-        const char* my_sensor_data= (char*)malloc(TEXTBUFFER_SIZE * sizeof(char));
-		my_sensor_data = create_coap_message();
-		coap_send_data_request(my_sensor_data);
-		free(my_sensor_data);
-
-        coap_data_ready = false;
-        k_mutex_unlock(&data_mutex);
-    }
+/* State START_MEASUREMENT */
+static void start_measurement_run(void *o){
+	printk("START_MEASUREMENT\n");
+	
+	struct s_object *s = (struct s_object *)o;
+	s->error = 0;
+	
+	/* Start periodic measurement */
+	start_measurement(s->error);
+	
+	smf_sleep_sec = 10;
+	smf_set_state(SMF_CTX(&s_obj), &states[READ_MEASUREMENT]);
 }
 
+/* State READ_MEASUREMENT */
+static void read_measurement_run(void *o){
+	printk("READ_MEASUREMENT\n");
 
+	struct s_object *s = (struct s_object *)o;
+	s->error = 0;
+
+	read_measurement();
+	print_measurement();
+
+	smf_sleep_sec = 0;
+	smf_set_state(SMF_CTX(&s_obj), &states[SEND_DATA]);
+}
+
+/* State SEND_DATA */
+static void send_data_run(void *o){
+	printk("SEND_DATA\n");
+	
+	// Use shared_data for CoAP communication
+	const char* my_sensor_data= (char*)malloc(TEXTBUFFER_SIZE * sizeof(char));
+	my_sensor_data = create_coap_message();
+	coap_send_data_request(my_sensor_data);
+	free(my_sensor_data);
+
+	smf_sleep_sec = SLEEP_TIME_SECONDS;
+	smf_set_state(SMF_CTX(&s_obj), &states[READ_MEASUREMENT]);
+}
+
+/* State STOP_MEASUREMENT */
+static void stop_measurement_run(void *o){
+	printk("STOP_MEASUREMENT\n");
+	
+	struct s_object *s = (struct s_object *)o;
+	s->error = 0;
+	
+	/* Stop periodic measurement */
+	stop_measurement(s->error);
+	
+	smf_sleep_sec = 10;
+	smf_set_state(SMF_CTX(&s_obj), &states[READ_MEASUREMENT]);
+}
+
+/* State IDLE_MODE */
+static void idle_mode_run(void *o){
+	printk("IDLE_MODE\n");
+	
+	struct s_object *s = (struct s_object *)o;
+	s->error = 0;
+	
+	/* */
+	
+	smf_sleep_sec = 0;
+	smf_set_state(SMF_CTX(&s_obj), &states[IDLE_MODE]);
+}
+
+/* Populate state table */
+
+static const struct smf_state states[] = {
+	[INIT] = SMF_CREATE_STATE(NULL, init_run, NULL),
+	[START_MEASUREMENT] = SMF_CREATE_STATE(NULL, start_measurement_run, NULL),
+	[READ_MEASUREMENT] = SMF_CREATE_STATE(NULL, read_measurement_run, NULL),
+	[SEND_DATA] = SMF_CREATE_STATE(NULL, send_data_run, NULL),
+	[IDLE_MODE] = SMF_CREATE_STATE(NULL, idle_mode_run, NULL),
+};
 
 void main(void)
 {
-	int16_t error = 0;
+	int32_t ret;
+
+	/* Set init state */
+	smf_set_initial(SMF_CTX(&s_obj), &states[INIT]);
 	
-	/* Init I2C, SC41, SVM41 */
-	sensirion_i2c_hal_init();
-	clean_up_sensor_states(error);
-
-	/* Start periodic measurement */
-	start_measurement(error);
-	k_sleep(K_SECONDS(10));
-	
-	coap_init();
-
-	k_mutex_init(&data_mutex);
-    k_condvar_init(&data_ready_cv);
-
-	k_tid_t sensor_thread_id = k_thread_create(&sensor_thread_data, sensor_stack, STACK_SIZE,
-                                               sensor_thread_entry, NULL, NULL, NULL, 0, 
-											   K_PRIO_COOP(0), K_NO_WAIT);
-
-    k_tid_t coap_thread_id = k_thread_create(&coap_thread_data, coap_stack, STACK_SIZE,
-                                             coap_thread_entry, NULL, NULL, NULL, 0, 
-											 K_PRIO_COOP(0), K_NO_WAIT);
-
-    k_thread_start(sensor_thread_id);
-    k_thread_start(coap_thread_id);
-
-    k_sleep(K_FOREVER);
+	while (1) {
+		ret = smf_run_state(SMF_CTX(&s_obj));
+		if(ret) {
+			printk("Error: %d\n", ret);
+			smf_set_initial(SMF_CTX(&s_obj), &states[INIT]);
+			smf_sleep_sec = 60;
+		}
+		k_sleep(K_SECONDS(smf_sleep_sec));
+	}
 }
 
 void coap_init(void)
