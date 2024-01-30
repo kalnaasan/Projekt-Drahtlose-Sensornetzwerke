@@ -17,134 +17,32 @@ void coap_init(void);
 void coap_send_data_response_cb(void *p_context, otMessage *p_message, const otMessageInfo *p_message_info, otError result);
 void coap_send_data_request(char *message);
 
-/* SMF */
-
-int32_t smf_sleep_sec = 0;
-
-static const struct smf_state states[];
-
-enum state { INIT, START_MEASUREMENT, READ_MEASUREMENT, SEND_DATA, IDLE_MODE};
-
-struct s_object {
-	/* First */
+void main(void)
+{
+	
 	int16_t error;
-
-	struct smf_ctx;
-	/* other state specific data add here */
-} s_obj;
-
-/* State INIT */
-static void init_run(void *o){
-	printk("INIT\n");
-
-	struct s_object *s = (struct s_object *)o;
-	s->error = 0;
 
 	/* Init I2C, SC41, SVM41 */
 	sensirion_i2c_hal_init();
-	clean_up_sensor_states(s->error);
+	clean_up_sensor_states(error);
 
 	/* Init CoAP */
 	coap_init();
 
-	smf_sleep_sec = 0;
-	smf_set_state(SMF_CTX(&s_obj), &states[START_MEASUREMENT]);
-}
-
-/* State START_MEASUREMENT */
-static void start_measurement_run(void *o){
-	printk("START_MEASUREMENT\n");
-	
-	struct s_object *s = (struct s_object *)o;
-	s->error = 0;
-	
 	/* Start periodic measurement */
-	start_measurement(s->error);
-	
-	smf_sleep_sec = 10;
-	smf_set_state(SMF_CTX(&s_obj), &states[READ_MEASUREMENT]);
-}
+	start_measurement(error);
 
-/* State READ_MEASUREMENT */
-static void read_measurement_run(void *o){
-	printk("READ_MEASUREMENT\n");
-
-	struct s_object *s = (struct s_object *)o;
-	s->error = 0;
-
-	read_measurement();
-	print_measurement();
-
-	smf_sleep_sec = 0;
-	smf_set_state(SMF_CTX(&s_obj), &states[SEND_DATA]);
-}
-
-/* State SEND_DATA */
-static void send_data_run(void *o){
-	printk("SEND_DATA\n");
-	
-	// Use shared_data for CoAP communication
+	/* Send DATA */
 	const char* my_sensor_data= (char*)malloc(TEXTBUFFER_SIZE * sizeof(char));
 	my_sensor_data = create_coap_message();
 	coap_send_data_request(my_sensor_data);
 	free(my_sensor_data);
-
-	smf_sleep_sec = SLEEP_TIME_SECONDS;
-	smf_set_state(SMF_CTX(&s_obj), &states[READ_MEASUREMENT]);
-}
-
-/* State STOP_MEASUREMENT */
-static void stop_measurement_run(void *o){
-	printk("STOP_MEASUREMENT\n");
-	
-	struct s_object *s = (struct s_object *)o;
-	s->error = 0;
-	
-	/* Stop periodic measurement */
-	stop_measurement(s->error);
-	
-	smf_sleep_sec = 10;
-	smf_set_state(SMF_CTX(&s_obj), &states[READ_MEASUREMENT]);
-}
-
-/* State IDLE_MODE */
-static void idle_mode_run(void *o){
-	printk("IDLE_MODE\n");
-	
-	struct s_object *s = (struct s_object *)o;
-	s->error = 0;
-	
-	/* */
-	
-	smf_sleep_sec = 0;
-	smf_set_state(SMF_CTX(&s_obj), &states[IDLE_MODE]);
-}
-
-/* Populate state table */
-
-static const struct smf_state states[] = {
-	[INIT] = SMF_CREATE_STATE(NULL, init_run, NULL),
-	[START_MEASUREMENT] = SMF_CREATE_STATE(NULL, start_measurement_run, NULL),
-	[READ_MEASUREMENT] = SMF_CREATE_STATE(NULL, read_measurement_run, NULL),
-	[SEND_DATA] = SMF_CREATE_STATE(NULL, send_data_run, NULL),
-	[IDLE_MODE] = SMF_CREATE_STATE(NULL, idle_mode_run, NULL),
-};
-
-void main(void)
-{
-	int32_t ret;
-
-	/* Set init state */
-	smf_set_initial(SMF_CTX(&s_obj), &states[INIT]);
 	
 	while (1) {
-		ret = smf_run_state(SMF_CTX(&s_obj));
-		if(ret) {
-			printk("Error: %d\n", ret);
-			smf_set_initial(SMF_CTX(&s_obj), &states[INIT]);
-			smf_sleep_sec = 60;
-		}
-		k_sleep(K_SECONDS(smf_sleep_sec));
+
+		read_measurement();
+		print_measurement();
+		k_sleep(K_SECONDS(10));
 	}
 }
 
