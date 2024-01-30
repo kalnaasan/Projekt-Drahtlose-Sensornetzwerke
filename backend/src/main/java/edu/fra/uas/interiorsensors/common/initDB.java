@@ -37,14 +37,14 @@ public class initDB {
     @PostConstruct
     private void init() {
         if (this.activeProfile.equals("dev")) {
-            Room room1 = this.roomRepository.save(new Room(null, "Room 1", new ArrayList<>(),null, LocalDateTime.now(), LocalDateTime.now()));
+            Room room1 = this.roomRepository.save(new Room(null, "Room 1", new ArrayList<>(), null, null, LocalDateTime.now(), LocalDateTime.now()));
             this.genrateSensorsOfRoom(room1, "123456");
-            Room room2 = this.roomRepository.save(new Room(null, "Room 2", new ArrayList<>(),null, LocalDateTime.now(), LocalDateTime.now()));
+            Room room2 = this.roomRepository.save(new Room(null, "Room 2", new ArrayList<>(), null, null, LocalDateTime.now(), LocalDateTime.now()));
             this.genrateSensorsOfRoom(room2, "456789");
-            Room room3 = this.roomRepository.save(new Room(null, "Room 3", new ArrayList<>(),null, LocalDateTime.now(), LocalDateTime.now()));
+            Room room3 = this.roomRepository.save(new Room(null, "Room 3", new ArrayList<>(), null, null, LocalDateTime.now(), LocalDateTime.now()));
             this.genrateSensorsOfRoom(room3, "789123");
-           // Room room4 = this.roomRepository.save(new Room(null, "Room 4", new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
-            this.genrateSensorsOfRoom(null, "147258");
+            Room room4 = this.roomRepository.save(new Room(null, "Room 4", new ArrayList<>(), null, null, LocalDateTime.now(), LocalDateTime.now()));
+            this.genrateSensorsOfRoom(room4, "147258");
 
             this.sensorRepository.save(new Sensor(null, "369258_SD41_TEMP", "TEMP", null, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
             this.sensorRepository.save(new Sensor(null, "369258_SD41_CO2", "CO2", null, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
@@ -55,24 +55,52 @@ public class initDB {
 
     private void genrateSensorsOfRoom(Room room, String board) {
         Sensor SD41_TEMP = this.sensorRepository.save(new Sensor(null, board + "_SD41_TEMP", "TEMP", room, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
-        this.generateValues(SD41_TEMP, 12, 29);
+        /*this.generateValues(SD41_TEMP, 12, 29, LocalDate.parse("2024-01-23"));
+        this.generateValues(SD41_TEMP, 12, 29, LocalDate.parse("2024-01-24"));
+        this.generateValues(SD41_TEMP, 12, 29, LocalDate.parse("2024-01-25"));
+        this.generateValues(SD41_TEMP, 12, 29, LocalDate.parse("2024-01-26"));
+        this.generateValues(SD41_TEMP, 12, 29, LocalDate.parse("2024-01-27"));
+        this.generateValues(SD41_TEMP, 12, 29, LocalDate.parse("2024-01-28"));
+        this.generateValues(SD41_TEMP, 12, 29, LocalDate.parse("2024-01-29"));*/
+        this.generateValues(SD41_TEMP, 12, 29, LocalDate.parse("2024-01-30"));
 
         Sensor SD41_CO2 = this.sensorRepository.save(new Sensor(null, board + "_SD41_CO2", "CO2", room, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
-        this.generateValues(SD41_CO2, 500, 2500);
+        /*this.generateValues(SD41_CO2, 500, 2500, LocalDate.parse("2024-01-23"));
+        this.generateValues(SD41_CO2, 500, 2500, LocalDate.parse("2024-01-24"));
+        this.generateValues(SD41_CO2, 500, 2500, LocalDate.parse("2024-01-25"));
+        this.generateValues(SD41_CO2, 500, 2500, LocalDate.parse("2024-01-26"));
+        this.generateValues(SD41_CO2, 500, 2500, LocalDate.parse("2024-01-27"));
+        this.generateValues(SD41_CO2, 500, 2500, LocalDate.parse("2024-01-28"));
+        this.generateValues(SD41_CO2, 500, 2500, LocalDate.parse("2024-01-29"));*/
+        this.generateValues(SD41_CO2, 500, 2500, LocalDate.parse("2024-01-30"));
 
         Sensor SD41_HM = this.sensorRepository.save(new Sensor(null, board + "_SD41_HM", "HM", room, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
-        this.generateValues(SD41_HM, 30, 80);
+        /*this.generateValues(SD41_HM, 30, 80, LocalDate.parse("2024-01-23"));
+        this.generateValues(SD41_HM, 30, 80, LocalDate.parse("2024-01-24"));
+        this.generateValues(SD41_HM, 30, 80, LocalDate.parse("2024-01-25"));
+        this.generateValues(SD41_HM, 30, 80, LocalDate.parse("2024-01-26"));
+        this.generateValues(SD41_HM, 30, 80, LocalDate.parse("2024-01-27"));
+        this.generateValues(SD41_HM, 30, 80, LocalDate.parse("2024-01-28"));
+        this.generateValues(SD41_HM, 30, 80, LocalDate.parse("2024-01-29"));*/
+        this.generateValues(SD41_HM, 30, 80, LocalDate.parse("2024-01-30"));
 
         Sensor SD41_VOC = this.sensorRepository.save(new Sensor(null, board + "_SD41_VOC", "VOC", room, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
-        this.generateValues(SD41_VOC, 20, 120);
+/*        this.generateValues(SD41_VOC, 20, 120, LocalDate.parse("2024-01-23"));
+        this.generateValues(SD41_VOC, 20, 120, LocalDate.parse("2024-01-24"));
+        this.generateValues(SD41_VOC, 20, 120, LocalDate.parse("2024-01-25"));
+        this.generateValues(SD41_VOC, 20, 120, LocalDate.parse("2024-01-26"));
+        this.generateValues(SD41_VOC, 20, 120, LocalDate.parse("2024-01-27"));
+        this.generateValues(SD41_VOC, 20, 120, LocalDate.parse("2024-01-28"));
+        this.generateValues(SD41_VOC, 20, 120, LocalDate.parse("2024-01-29"));*/
+        this.generateValues(SD41_VOC, 20, 120, LocalDate.parse("2024-01-30"));
     }
 
-    public void generateValues(Sensor sensor, Integer minValue, Integer maxValue) {
+    public void generateValues(Sensor sensor, Integer minValue, Integer maxValue, LocalDate date) {
         Random random = new Random();
         for (int i = 0; i < 24; i++) {
-            for (int j = 0; j < 60; j+=3) {
+            for (int j = 0; j < 60; j += 3) {
                 int randomInteger = random.nextInt((maxValue - minValue) + 1) + minValue;
-                LocalDateTime created = LocalDateTime.of(LocalDate.now().getYear(), LocalDate.now().getMonthValue(), LocalDate.now().getDayOfMonth(), i % 24, j % 60, j % 60);
+                LocalDateTime created = LocalDateTime.of(date.getYear(), date.getMonthValue(), date.getDayOfMonth(), i % 24, j % 60, j % 60);
                 ValueMeasure valueMeasure = new ValueMeasure(null, randomInteger, created, sensor, created, created);
                 this.valueMeasureRepository.save(valueMeasure);
             }
