@@ -1,108 +1,121 @@
-<h2 mat-dialog-title>Create Plan</h2>
-<mat-dialog-content class="mat-typography">
-  <form [formGroup]="formGroup">
-    <div class="container rounded-4 bg-white overflow-y-scroll">
-      <div class="row mt-3">
-        <div class="col-12">
-          <div class="h5">Shape</div>
-        </div>
+<form [formGroup]="formGroup">
+  <div class="container overflow-y-scroll">
+    <div class="row mt-3 shadow rounded-4 bg-white mx-3"
+         *ngIf="formGroup.get('width')?.value > 0 && formGroup.get('height')?.value > 0">
+      <div class="col-12 text-center h3 mt-3">Create Plan</div>
+      <div class="col-12 text-center my-3">
+        <div id="svg-container-dialog"></div>
       </div>
-      <div class="row">
-        <div class="col-12 col-sm-4 d-flex align-items-center">
-          <mat-form-field appearance="outline">
-            <mat-label>Shape's Width</mat-label>
-            <input type="number" matInput #width formControlName="width" maxlength="3" placeholder="300">
+    </div>
 
-            <mat-hint align="end">{{ width.value.length }}/3</mat-hint>
-          </mat-form-field>
+    <div class="row mt-3 shadow rounded-4 bg-white my-5 mx-3 p-3">
+      <div class="col-12">
+        <div class="row mt-2 mb-5">
+          <div class="col-12 text-center">
+            <button class="btn btn-danger rounded-pill me-2" [routerLink]="['home']">Cancel</button>
+            <button class="btn btn-success rounded-pill" (click)="saveShape()"
+                    [disabled]="!formGroup.valid|| (formGroup.valid && svg === undefined)">Save
+            </button>
+          </div>
         </div>
-        <div class="col-12 col-sm-4 d-flex align-items-center">
-          <mat-form-field appearance="outline">
-            <mat-label>Shape's Height</mat-label>
-            <input type="number" matInput #height formControlName="height" maxlength="3" placeholder="300">
 
-            <mat-hint align="end">{{ height.value.length }}/3</mat-hint>
-          </mat-form-field>
-        </div>
-        <div class="col-12 col-sm-4 d-flex align-items-center">
-          <button class="btn btn-primary rounded-pill float-end" (click)="createShape()"
-                  [disabled]="!formGroup.valid || (formGroup.valid && svg !== undefined)">
-            Create
-          </button>
-        </div>
-      </div>
+        <div class="row d-flex align-items-center">
+          <div class="col-12 col-sm-3 h5">Shape:</div>
+          <div class="col-12 col-sm-3 d-flex align-items-center">
+            <mat-form-field appearance="outline">
+              <mat-label>Shape's Width</mat-label>
+              <input type="number" matInput #width formControlName="width" maxlength="3" placeholder="300">
 
-      <div class="row my-3">
-        <div class="col-12 col-sm-2">
-          <div class="h5">Elements:</div>
-        </div>
-        <div class="col-12 col-sm-2 d-flex justify-content-center">
-          <button class="btn btn-secondary rounded-pill d-flex align-items-center" (click)="addElement('Line')"
-                  [disabled]="!formGroup.valid">
-            <mat-icon>plus_one</mat-icon>
-            Line
-          </button>
-        </div>
-        <div class="col-12 col-sm-2 d-flex justify-content-center">
-          <button class="btn btn-secondary rounded-pill d-flex align-items-center" (click)="addElement('Sensor')"
-                  [disabled]="!formGroup.valid">
-            <mat-icon>plus_one</mat-icon>
-            Sensor
-          </button>
-        </div>
-      </div>
+              <mat-hint align="end">{{ width.value.length }}/3</mat-hint>
+            </mat-form-field>
+          </div>
+          <div class="col-12 col-sm-3 d-flex align-items-center">
+            <mat-form-field appearance="outline">
+              <mat-label>Shape's Height</mat-label>
+              <input type="number" matInput #height formControlName="height" maxlength="3" placeholder="300">
 
-      <div class="row" *ngIf="elementControls.length>0">
-        <div class="col-12">
-          <table class="table table-striped table-bordered table-hover">
-            <thead>
-            <tr>
-              <th scope="col">#</th>
-              <th scope="col">Type</th>
-              <th scope="col">Start</th>
-              <th scope="col">Ende</th>
-              <th scope="col">Action</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr *ngFor="let element of elementControls; let i = index" [formGroup]="element">
-              <th scope="row">{{ i + 1 }}</th>
-              <td>
-                <mat-form-field appearance="outline">
-                  <mat-label>Element's Type</mat-label>
-                  <input type="text" #type matInput formControlName="type" placeholder="Circle or Line">
-                </mat-form-field>
-              </td>
-              <td>
-                <mat-form-field appearance="outline">
-                  <mat-label>Start of X & Y axis</mat-label>
-                  <input type="text" matInput formControlName="start" placeholder="x:y">
-                </mat-form-field>
-              <td>
-                <mat-form-field appearance="outline">
-                  <mat-label>End of X & Y axis</mat-label>
-                  <input type="text" matInput formControlName="end" placeholder="x:y">
-                </mat-form-field>
-              <td>
-                <button class="btn btn-success rounded-pill" (click)="addElementToSVG(i)">Apply</button>
-                <button class="btn btn-primary rounded-pill mx-2" (click)="addElementToSVG(i)" *ngIf="type.value.toLocaleLowerCase() === 'sensor'">Select Room</button>
-              </td>
-            </tr>
-            </tbody>
-          </table>
+              <mat-hint align="end">{{ height.value.length }}/3</mat-hint>
+            </mat-form-field>
+          </div>
+          <div class="col-12 col-sm-3 d-flex align-items-center">
+            <button class="btn btn-primary rounded-pill float-end" (click)="createShape()"
+                    [disabled]="!formGroup.valid || (formGroup.valid && svg !== undefined)">
+              Create
+            </button>
+          </div>
         </div>
-      </div>
 
-      <div class="row mt-3" *ngIf="formGroup.get('width')?.value >0 && formGroup.get('height')?.value  >0">
-        <div class="col-12 text-center">
-          <div id="svg-container-dialog"></div>
+        <div class="row d-flex align-items-center">
+          <div class="col-12 col-sm-3 h5">Elements:</div>
+          <div class="col-12 col-sm-3 my-3 d-flex justify-content-center">
+            <button class="btn btn-secondary rounded-pill d-flex align-items-center" (click)="addLine()"
+                    [disabled]="!formGroup.valid">
+              <mat-icon>plus_one</mat-icon>
+              Line
+            </button>
+          </div>
+          <div class="col-12 col-sm-3 my-3 d-flex justify-content-center">
+            <button class="btn btn-secondary rounded-pill d-flex align-items-center" (click)="addSensor()"
+                    [disabled]="!formGroup.valid">
+              <mat-icon>plus_one</mat-icon>
+              Sensor
+            </button>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12" *ngIf="elementControls.length>0">
+            <table class="table table-striped table-bordered table-hover">
+              <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Type</th>
+                <th scope="col">Start</th>
+                <th scope="col">Ende</th>
+                <th scope="col">Action</th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr *ngFor="let element of elementControls; let i = index" [formGroup]="element">
+                <th scope="row">{{ i + 1 }}</th>
+                <td>
+                  <mat-form-field appearance="outline" class="p-0 m-0">
+                    <mat-label>Element's Type</mat-label>
+                    <input type="text" #type matInput formControlName="type" placeholder="Circle or Line">
+                  </mat-form-field>
+                </td>
+                <td>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Start of X & Y axis</mat-label>
+                    <input type="text" matInput formControlName="start" placeholder="x:y">
+                  </mat-form-field>
+                </td>
+                <td *ngIf="type.value.toLocaleLowerCase() !== 'sensor'">
+                  <mat-form-field appearance="outline">
+                    <mat-label>End of X & Y axis</mat-label>
+                    <input type="text" matInput formControlName="end" placeholder="x:y">
+                  </mat-form-field>
+                </td>
+                <td *ngIf="type.value.toLocaleLowerCase() === 'sensor'">
+                  <mat-form-field *ngIf="type.value.toLocaleLowerCase() === 'sensor'">
+                    <mat-label>Room</mat-label>
+                    <mat-select formControlName="room" [required]="true">
+                      <mat-option *ngIf="rooms.length === 0" [disabled]="rooms.length === 0">no-rooms</mat-option>
+                      <mat-option *ngFor="let room of rooms" [value]="room">{{ room.name }}</mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="element.controls['room'].hasError('required')">Please choose a room</mat-error>
+                  </mat-form-field>
+                </td>
+                <td>
+                  <button class="btn btn-success rounded-pill" (click)="addElementToSVG(i)">Apply</button>
+                </td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
-  </form>
-</mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-dialog-close class="btn btn-danger rounded-pill me-2">Cancel</button>
-  <button class="btn btn-success rounded-pill" [mat-dialog-close]="true" cdkFocusInitial>Save</button>
-</mat-dialog-actions>
+  </div>
+</form>
 
