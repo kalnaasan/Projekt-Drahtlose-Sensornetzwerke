@@ -3,8 +3,6 @@ logging:
   level:
     edu.fra.uas.coap.server: debug
 spring:
-  profiles:
-    active: prod
   # Mysql connection
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
