@@ -13,9 +13,12 @@ import edu.fra.uas.coap.server.model.Sensor;
 import edu.fra.uas.coap.server.model.ValueMeasure;
 import edu.fra.uas.coap.server.repository.SensorRepository;
 import edu.fra.uas.coap.server.repository.ValueMeasureRepository;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -24,19 +27,40 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Slf4j
+@Order(Ordered.HIGHEST_PRECEDENCE)
 @Service
 public class CoAPServerService {
+
     @Value("${coap.server}")
-    private String serverIP = "127.0.0.1";
+    private String serverIP;
     private final SensorRepository sensorRepository;
     private final ValueMeasureRepository valueMeasureRepository;
 
     @Autowired
-    public CoAPServerService(SensorRepository sensorRepository, ValueMeasureRepository valueMeasureRepository) throws IllegalStateException, IOException {
+    public CoAPServerService(SensorRepository sensorRepository, ValueMeasureRepository valueMeasureRepository)  {
         this.sensorRepository = sensorRepository;
         this.valueMeasureRepository = valueMeasureRepository;
+    }
 
+    private static DTOValueMeasure convertJSONToObject(String json) {
+        // ObjectMapper erstellen
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            // JSON-String in DTOValueMeasure umwandeln
+            DTOValueMeasure dtoValueMeasure = objectMapper.readValue(json, DTOValueMeasure.class);
+            // Ausgabe des Java-Objekts
+            log.info(dtoValueMeasure.toString());
+            return dtoValueMeasure;
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            return null;
+        }
+    }
+
+    @PostConstruct
+    public void startServe() throws IOException {
         log.info("Starting CoAP server");
+        log.info(this.serverIP);
         InetSocketAddress inetSocketAddress = new InetSocketAddress(this.serverIP, 5683);
         ObserversManager observersManager = new ObserversManager();
         CoapServer server = CoapServer.builder()
@@ -81,20 +105,5 @@ public class CoAPServerService {
         observersManager.init(server);
         server.start();
         log.info("Server is Started with socket: coap:/{}", server.getLocalSocketAddress());
-    }
-
-    private static DTOValueMeasure convertJSONToObject(String json) {
-        // ObjectMapper erstellen
-        ObjectMapper objectMapper = new ObjectMapper();
-        try {
-            // JSON-String in DTOValueMeasure umwandeln
-            DTOValueMeasure dtoValueMeasure = objectMapper.readValue(json, DTOValueMeasure.class);
-            // Ausgabe des Java-Objekts
-            log.info(dtoValueMeasure.toString());
-            return dtoValueMeasure;
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            return null;
-        }
     }
 }
