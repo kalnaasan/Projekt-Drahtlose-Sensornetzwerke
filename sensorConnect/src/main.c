@@ -32,16 +32,19 @@ void main(void)
 	/* Start periodic measurement */
 	start_measurement(error);
 
-	/* Send DATA */
-	const char* my_sensor_data= (char*)malloc(TEXTBUFFER_SIZE * sizeof(char));
-	my_sensor_data = create_coap_message();
-	coap_send_data_request(my_sensor_data);
-	free(my_sensor_data);
+	
 	
 	while (1) {
 
+		/* Read Measurement */
 		read_measurement();
 		print_measurement();
+
+		/* Send DATA */
+		const char* my_sensor_data= (char*)malloc(TEXTBUFFER_SIZE * sizeof(char));
+		my_sensor_data = create_coap_message();
+		coap_send_data_request(my_sensor_data);
+		free(my_sensor_data);
 		k_sleep(K_SECONDS(10));
 	}
 }

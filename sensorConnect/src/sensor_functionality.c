@@ -30,7 +30,7 @@ void clean_up_sensor_states(int16_t *error)
 void start_measurement(int16_t *error)
 {
 	// SCD41
-	error = scd4x_start_low_power_periodic_measurement();
+	error = scd4x_start_periodic_measurement();
 	if (error)
 	{
 		printk("Error executing scd4x_start_low_power_periodic_measurement(): %i\n", error);
