@@ -19,4 +19,4 @@ spring:
       ddl-auto: validate
     show-sql: false
 coap:
-  server: "10.80.2.239"
+  server: "10.20.30.8"
