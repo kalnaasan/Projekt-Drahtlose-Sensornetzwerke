@@ -14,4 +14,4 @@ ADD target/Server-1.0.0.jar Server-1.0.0.jar
 EXPOSE 5683
 
 # Set the entry point command for the Java application
-ENTRYPOINT ["java", "-jar", "Server-1.0.0.jar"]
+ENTRYPOINT ["java", "-jar", "Server-1.0.0.jar", "-Djava.net.preferIPv4Stack=true"]
