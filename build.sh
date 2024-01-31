@@ -30,13 +30,13 @@ done
 echo "MySQL ist bereit!"
 
 # Change to the CoAPServer folder and build the Docker image
-#cd ../CoAPServer/
-#chmod +x mvnw
-#./mvnw clean package -Dspring.profiles.active=test
-#docker build -t sensor-coap:latest --progress=plain .
+cd ../CoAPServer/
+chmod +x mvnw
+./mvnw clean package -Dspring.profiles.active=test
+docker build -t sensor-coap:latest --progress=plain .
 
 # Change to the backend folder and build the Docker image
-cd ./backend/
+cd ../backend/
 chmod +x mvnw
 ./mvnw clean package -Dspring.profiles.active=test
 docker build -t sensor-api:latest --progress=plain .
