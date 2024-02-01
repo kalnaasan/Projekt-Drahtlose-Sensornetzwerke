@@ -32,6 +32,9 @@ RUN ng build --output-path=dist --configuration=production
 # base image
 FROM nginx
 
+ENV TZ=Europe/Berlin
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
 ## Remove default Nginx website
 RUN rm -rf /usr/share/nginx/html/*
 COPY ./nginx.conf /etc/nginx/nginx.conf
