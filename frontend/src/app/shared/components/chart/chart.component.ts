@@ -131,17 +131,20 @@ export class ChartComponent implements OnInit {
           if (this.nameChart.toLowerCase().includes("temp")) {
             // 16 - 18 - 24 - 26
             this.setLimitValue(16, 18, 24, 26);
+            this.title = {text: 'Temperatur'};
           } else if (this.nameChart.toLowerCase().includes('hum')) {
             // 30, 40, 60, 70
             this.setLimitValue(30, 40, 60, 70);
+            this.title = {text: 'Humidity'};
           } else if (this.nameChart.toLowerCase().includes('voc')) {
             // 50 - 51 - 100
             this.setLimitValue(0, 0, 50, 100);
+            this.title = {text: 'VOC'};
           } else if (this.nameChart.toLowerCase().includes('co2')) {
             // 1000 - 1001 - 2000 -
             this.setLimitValue(0, 0, 1000, 2000);
+            this.title = {text: 'CO2'};
           }
-          this.title = {text: this.nameChart};
           this.calculateStatus();
         },
         error: (err: any) => console.log(err),
@@ -169,12 +172,11 @@ export class ChartComponent implements OnInit {
 
   private calculateStatus() {
     if (this.averageValues < this.minValue || this.averageValues > this.maxValue) {
-      this.addNewItem(this.nameChart, 'danger', this.averageValues);
-    } else if ((this.averageValues >= this.minValue && this.averageValues < this.minNormalValue) ||
-      (this.averageValues > this.maxNormalValue && this.averageValues < this.maxValue)) {
-      this.addNewItem(this.nameChart, 'success', this.averageValues);
+      this.addNewItem(this.title.text || '', 'danger', this.averageValues);
+    } else if ((this.averageValues >= this.minValue && this.averageValues <= this.minNormalValue) || (this.averageValues > this.maxNormalValue && this.averageValues <= this.maxValue)) {
+      this.addNewItem(this.title.text || '', 'warning', this.averageValues);
     } else if (this.averageValues >= this.minNormalValue && this.averageValues <= this.maxNormalValue) {
-      this.addNewItem(this.nameChart, 'warning', this.averageValues);
+      this.addNewItem(this.title.text || '', 'success', this.averageValues);
     }
   }
 }
