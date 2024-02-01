@@ -12,6 +12,11 @@ else
     echo "Das Netzwerk '$network_name' wurde erfolgreich erstellt."
 fi
 
+# stop stack if exisit
+set +e
+docker compose -p sensor down
+set +e
+
 # Change to the DB folder and start DB for deployment
 cd ./DB/
 docker compose -p db up -d
