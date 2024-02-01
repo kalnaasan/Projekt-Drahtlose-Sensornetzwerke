@@ -131,7 +131,7 @@ void print_measurement()
 	else
 		(printk("No Valid Data.\n"));
 
-	printk("  SVM41\n");
+	printk("SVM41\n");
 	if (valid_SVM41_data)
 	{
 		printk("Humidity: %i milli %% RH\n", SVM41_humidity * 10);
