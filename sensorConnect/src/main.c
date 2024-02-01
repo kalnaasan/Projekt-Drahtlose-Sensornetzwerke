@@ -26,11 +26,10 @@ static const struct smf_state states[];
 enum state { INIT, START_MEASUREMENT, READ_MEASUREMENT, SEND_DATA, IDLE_MODE};
 
 struct s_object {
-	/* First */
-	int16_t error;
-
-	struct smf_ctx;
+	/* This must be first */
+	struct smf_ctx ctx;
 	/* other state specific data add here */
+	int16_t error;
 } s_obj;
 
 /* State INIT */
