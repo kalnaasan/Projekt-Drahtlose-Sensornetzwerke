@@ -3,11 +3,28 @@
 #include <openthread/thread.h>
 #include <openthread/coap.h>
 #include <stdio.h>
+#include <zephyr/drivers/gpio.h> //for buttons
 
 #include "sensor_functionality.h"
 
 #define TEXTBUFFER_SIZE 256
 #define SLEEP_TIME_SECONDS 60
+
+#define BUTTON0_NODE DT_NODELABEL(button0) //DT_N_S_buttons_S_button_0
+
+bool calibration_mode = false;
+
+//Button for Calibration mode:
+static const struct gpio_dt_spec button0_spec = GPIO_DT_SPEC_GET(BUTTON0_NODE, gpios);
+static struct gpio_callback button0_cb;
+
+void button0_pressed_callback(const struct device *gpiob, struct gpio_callbackcb *cb,
+                                     gpio_port_pins_t pins){
+    //Set global calibration bool to true
+	calibration_mode = true;
+    
+}  
+
 
 /* CoAP */
 
@@ -19,7 +36,13 @@ void coap_send_data_request(char *message);
 
 void main(void)
 {
-	
+	//init button(s)
+	gpio_pin_configure_dt(&button0_spec, GPIO_INPUT);
+
+    gpio_pin_interrupt_configure_dt(&button0_spec, GPIO_INT_EDGE_TO_ACTIVE);
+    gpio_init_callback(&button0_cb, button0_pressed_callback, BIT(button0_spec.pin) );
+    gpio_add_callback(button0_spec.port, &button0_cb);
+
 	int16_t error;
 
 	/* Init I2C, SC41, SVM41 */
@@ -35,6 +58,33 @@ void main(void)
 	
 	
 	while (1) {
+
+		if(calibration_mode){
+			int16_t error = 0;
+    		printk("------------------------\n");
+			printk("Stop periodic Measurement\n");
+			k_msleep(1000);
+			error = scd4x_stop_periodic_measurement();
+			k_msleep(1000);
+			printk("Starting Periodic Measurement...\nPlace Sensor station outside for 3 minutes\n");
+			error = scd4x_start_periodic_measurement();
+			k_msleep(1000);
+			k_msleep(60000); //Sleep one minute
+			k_msleep(60000); //2 minutes
+			k_msleep(60000); //3 minutes
+			error = scd4x_stop_periodic_measurement();
+			k_msleep(1000);
+			printk("Calibrating\n");
+			uint16_t target_co2_concentration = 400;
+			uint16_t frc_correction;
+			error = scd4x_perform_forced_recalibration(target_co2_concentration, &frc_correction);
+			printk("frc_correction: %i\n", frc_correction);
+
+			printk("Restart periodic Measurement\n");
+			error = scd4x_start_periodic_measurement();
+			printk("------------------------\n");
+			calibration_mode = false;
+		}
 
 		/* Read Measurement */
 		read_measurement();
