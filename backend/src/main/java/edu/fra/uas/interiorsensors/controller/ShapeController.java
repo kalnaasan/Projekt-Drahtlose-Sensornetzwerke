@@ -78,11 +78,16 @@ public class ShapeController {
         }
 
         for (Element element : elements) {
+            Room room = null;
+            if (element.getRoom() != null){
+                room = this.roomRepository.findById(element.getRoom().getId()).orElseGet(null);
+            }
+            element.setRoom(room);
             element.setShape(shapeCreated);
             this.elementRepository.save(element);
         }
 
-        return this.message("Created Shape", shapeCreated, HttpStatus.CREATED);
+        return this.message("Created Shape", null, HttpStatus.CREATED);
     }
 
 
