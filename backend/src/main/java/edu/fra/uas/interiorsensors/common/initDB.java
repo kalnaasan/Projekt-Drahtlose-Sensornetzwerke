@@ -48,51 +48,23 @@ public class initDB {
 
             this.sensorRepository.save(new Sensor(null, "369258_SD41_TEMP", "TEMP", null, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
             this.sensorRepository.save(new Sensor(null, "369258_SD41_CO2", "CO2", null, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
-            this.sensorRepository.save(new Sensor(null, "369258_SD41_HM", "HM", null, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
+            this.sensorRepository.save(new Sensor(null, "369258_SD41_HUM", "HM", null, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
             this.sensorRepository.save(new Sensor(null, "369258_SD41_VOC", "VOC", null, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
         }
     }
 
     private void genrateSensorsOfRoom(Room room, String board) {
-        Sensor SD41_TEMP = this.sensorRepository.save(new Sensor(null, board + "_SD41_TEMP", "TEMP", room, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
-        /*this.generateValues(SD41_TEMP, 12, 29, LocalDate.parse("2024-01-23"));
-        this.generateValues(SD41_TEMP, 12, 29, LocalDate.parse("2024-01-24"));
-        this.generateValues(SD41_TEMP, 12, 29, LocalDate.parse("2024-01-25"));
-        this.generateValues(SD41_TEMP, 12, 29, LocalDate.parse("2024-01-26"));
-        this.generateValues(SD41_TEMP, 12, 29, LocalDate.parse("2024-01-27"));
-        this.generateValues(SD41_TEMP, 12, 29, LocalDate.parse("2024-01-28"));
-        this.generateValues(SD41_TEMP, 12, 29, LocalDate.parse("2024-01-29"));*/
-        this.generateValues(SD41_TEMP, 12, 29, LocalDate.parse("2024-01-30"));
+        Sensor SVD41_TEMP = this.sensorRepository.save(new Sensor(null, board + "_SVD41_TEMP", "TEMP", room, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
+        this.generateValues(SVD41_TEMP, 12000, 29000, LocalDate.now());
 
-        Sensor SD41_CO2 = this.sensorRepository.save(new Sensor(null, board + "_SD41_CO2", "CO2", room, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
-        /*this.generateValues(SD41_CO2, 500, 2500, LocalDate.parse("2024-01-23"));
-        this.generateValues(SD41_CO2, 500, 2500, LocalDate.parse("2024-01-24"));
-        this.generateValues(SD41_CO2, 500, 2500, LocalDate.parse("2024-01-25"));
-        this.generateValues(SD41_CO2, 500, 2500, LocalDate.parse("2024-01-26"));
-        this.generateValues(SD41_CO2, 500, 2500, LocalDate.parse("2024-01-27"));
-        this.generateValues(SD41_CO2, 500, 2500, LocalDate.parse("2024-01-28"));
-        this.generateValues(SD41_CO2, 500, 2500, LocalDate.parse("2024-01-29"));*/
-        this.generateValues(SD41_CO2, 500, 2500, LocalDate.parse("2024-01-30"));
+        Sensor SVD41_CO2 = this.sensorRepository.save(new Sensor(null, board + "_SVD41_CO2", "CO2", room, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
+        this.generateValues(SVD41_CO2, 500, 2500, LocalDate.now());
 
-        Sensor SD41_HM = this.sensorRepository.save(new Sensor(null, board + "_SD41_HM", "HM", room, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
-        /*this.generateValues(SD41_HM, 30, 80, LocalDate.parse("2024-01-23"));
-        this.generateValues(SD41_HM, 30, 80, LocalDate.parse("2024-01-24"));
-        this.generateValues(SD41_HM, 30, 80, LocalDate.parse("2024-01-25"));
-        this.generateValues(SD41_HM, 30, 80, LocalDate.parse("2024-01-26"));
-        this.generateValues(SD41_HM, 30, 80, LocalDate.parse("2024-01-27"));
-        this.generateValues(SD41_HM, 30, 80, LocalDate.parse("2024-01-28"));
-        this.generateValues(SD41_HM, 30, 80, LocalDate.parse("2024-01-29"));*/
-        this.generateValues(SD41_HM, 30, 80, LocalDate.parse("2024-01-30"));
+        Sensor SVD41_HUM = this.sensorRepository.save(new Sensor(null, board + "_SVD41_HUM", "HUM", room, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
+        this.generateValues(SVD41_HUM, 30000, 80000, LocalDate.now());
 
-        Sensor SD41_VOC = this.sensorRepository.save(new Sensor(null, board + "_SD41_VOC", "VOC", room, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
-/*        this.generateValues(SD41_VOC, 20, 120, LocalDate.parse("2024-01-23"));
-        this.generateValues(SD41_VOC, 20, 120, LocalDate.parse("2024-01-24"));
-        this.generateValues(SD41_VOC, 20, 120, LocalDate.parse("2024-01-25"));
-        this.generateValues(SD41_VOC, 20, 120, LocalDate.parse("2024-01-26"));
-        this.generateValues(SD41_VOC, 20, 120, LocalDate.parse("2024-01-27"));
-        this.generateValues(SD41_VOC, 20, 120, LocalDate.parse("2024-01-28"));
-        this.generateValues(SD41_VOC, 20, 120, LocalDate.parse("2024-01-29"));*/
-        this.generateValues(SD41_VOC, 20, 120, LocalDate.parse("2024-01-30"));
+        Sensor SVD41_VOC = this.sensorRepository.save(new Sensor(null, board + "_SVD41_VOC", "VOC", room, new ArrayList<>(), LocalDateTime.now(), LocalDateTime.now()));
+        this.generateValues(SVD41_VOC, 200, 1200, LocalDate.now());
     }
 
     public void generateValues(Sensor sensor, Integer minValue, Integer maxValue, LocalDate date) {
