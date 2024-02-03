@@ -1,1 +1,39 @@
-<app-data-view></app-data-view>
+<div class="container-fluid">
+  <div class="row d-flex justify-content-center">
+    <div class="col-12 col-sm-6 col-md-4 col-lg-3 " *ngFor="let room of rooms; let i = index;">
+      <div class="card shadow rounded-4 my-3" *ngIf="currenValues.length>0">
+        <div class="card-header text-center h3">{{ room.name }}</div>
+        <div class="card-body px-0">
+          <table class="table table-striped table-bordered table-hover w-100">
+            <thead>
+            <tr class="text-center">
+              <th scope="col">Sensor-name</th>
+              <th scope="col">Current-Value</th>
+            </tr>
+            </thead>
+            <tbody *ngIf="currenValues[i]">
+            <tr *ngFor="let current of currenValues[i]['valueMeasures']" class="text-center">
+              <td>{{ current.type.toUpperCase() }}</td>
+              <td>{{ current.value }}
+                <span *ngIf="current.type.toLowerCase().includes('co2')">PPM</span>
+                <span *ngIf="current.type.toLowerCase().includes('hum')">%</span>
+                <span *ngIf="current.type.toLowerCase().includes('temp')">°C</span>
+                <span *ngIf="current.type.toLowerCase().includes('voc')">index</span>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card-footer rounded-bottom-4 bg-success text-center" *ngIf="getStatus(currenValues[i])==='success'">
+          <p class="h4">The Quality of Air is good</p>
+        </div>
+        <div class="card-footer rounded-bottom-4 bg-warning text-center" *ngIf="getStatus(currenValues[i])==='warning'">
+          <p class="h4">It is recommended to ventilate room</p>
+        </div>
+        <div class="card-footer rounded-bottom-4 bg-danger text-center" *ngIf="getStatus(currenValues[i])==='danger'">
+          <p class="h4">The room must be ventilated immediately</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
