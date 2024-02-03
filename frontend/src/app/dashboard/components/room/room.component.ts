@@ -30,7 +30,6 @@ export class RoomComponent {
   addMessage(newItem: any) {
     this.status.push(newItem);
     if (this.status.length === this.sensors.length) {
-      console.log(this.status);
       this.openDialog();
     }
   }
@@ -38,11 +37,9 @@ export class RoomComponent {
   openDialog(): void {
     const dialogRef = this.dialog.open(StatusDialogComponent, {
       data: this.status,
+      disableClose: true,
     });
 
-    dialogRef.afterClosed().subscribe(result => {
-      this.status = [];
-      console.log('The dialog was closed', this.status);
-    });
+    dialogRef.afterClosed().subscribe(() => this.status = []);
   }
 }
