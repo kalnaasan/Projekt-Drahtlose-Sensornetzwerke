@@ -33,5 +33,7 @@ export class RoomService {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
-
+  getSensorValues(id: string): Observable<any> {
+    return this.http.get<Room>(`${this.apiUrl}/${id}/sensors`);
+  }
 }
