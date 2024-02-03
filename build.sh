@@ -1,5 +1,10 @@
 #! /bin/bash
 
+if [ "$(id -u)" != "0" ]; then
+    echo "Dieses Skript erfordert Superuser-Rechte. Bitte fuehren Sie es mit sudo aus."
+    exit 1
+fi
+
 # Name des Netzwerks
 network_name="compose"
 
