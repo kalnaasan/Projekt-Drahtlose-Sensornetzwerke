@@ -11,7 +11,10 @@
     </ul>
 
     <div class="bottom-button-container mt-auto">
-      <button class="btn btn-primary btn-fixed-width" (click)="addNewRaum()">Add new Room</button>
+      <button class="btn btn-primary btn-fixed-width" (click)="addNewRaum()">Add Room</button>
+    </div>
+    <div class="bottom-button-container mt-auto">
+      <button class="btn btn-primary btn-fixed-width" [routerLink]="'/grundriss'">Plan</button>
     </div>
   </mat-drawer>
   <mat-drawer-content class="content">
