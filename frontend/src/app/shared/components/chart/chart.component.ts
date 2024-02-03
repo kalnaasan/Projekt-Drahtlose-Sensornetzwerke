@@ -109,7 +109,7 @@ export class ChartComponent implements OnInit {
   }
 
   private convertDataToChartData(src: ValueMeasure[]) {
-    if (this.nameChart.toLowerCase().includes('temp') || this.nameChart.includes('hum')) {
+    if (this.nameChart.toLowerCase().includes('temp') || this.nameChart.toLowerCase().includes('hum')) {
       return src.map((valueMeasure: ValueMeasure) => [Date.parse(valueMeasure.readAt), Math.round(valueMeasure.value / 1000)]);
     } else if (this.nameChart.toLowerCase().includes('voc')) {
       return src.map((valueMeasure: ValueMeasure) => [Date.parse(valueMeasure.readAt), Math.round(valueMeasure.value / 10)]);
@@ -155,11 +155,6 @@ export class ChartComponent implements OnInit {
   }
 
   public calculateAverage(): number {
-    /*let sum = 0;
-    for (let i = 0; i < this.data.length; i++) {
-      sum += this.data[i][1];
-    }
-    return sum / this.data.length;*/
     return this.data[this.data.length - 1][1]
   }
 
