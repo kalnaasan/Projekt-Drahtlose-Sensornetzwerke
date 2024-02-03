@@ -2,6 +2,7 @@ package edu.fra.uas.coap.server.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -37,10 +38,10 @@ public class Shape {
     @Column(name = "width")
     private Integer width;
 
-    @OneToMany(targetEntity = Element.class, mappedBy = "shape")
+    @OneToMany(fetch = FetchType.EAGER, mappedBy = "shape")
     private List<Element> elements;
 
-    @OneToMany(targetEntity = Room.class, mappedBy = "shape")
+    @OneToMany(fetch = FetchType.EAGER, mappedBy = "shape")
     private List<Room> rooms;
 
     @CreationTimestamp

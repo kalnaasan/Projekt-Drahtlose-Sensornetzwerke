@@ -52,7 +52,8 @@ public class Room {
     @JoinColumn(name = "shape_id")
     private Shape shape;
 
-    @OneToOne(mappedBy = "room")
+    @JsonIgnore
+    @OneToOne(fetch = FetchType.LAZY, mappedBy = "room")
     private Element element;
 
     @CreationTimestamp

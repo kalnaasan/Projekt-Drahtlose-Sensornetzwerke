@@ -15,5 +15,6 @@ import java.util.List;
 @EqualsAndHashCode(exclude = "valueMeasures")
 public class BoardDTO {
     private String name;
+    private String roomName;
     private List<ValueMeasureDTO> valueMeasures;
 }
