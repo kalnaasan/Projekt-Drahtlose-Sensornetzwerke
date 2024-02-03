@@ -5,6 +5,7 @@ import * as d3 from 'd3';
 import {RoomService} from '../../../shared/services/RoomService';
 import {Element} from '../../../shared/model/element';
 import {ShapeService} from '../../../shared/services/shape.service';
+import {Router} from "@angular/router";
 
 @Component({
   selector: 'app-plan-dialog',
@@ -20,7 +21,8 @@ export class PlanDialogComponent implements OnInit, AfterViewInit {
 
   constructor(private formBuilder: FormBuilder,
               private roomService: RoomService,
-              private shapeService: ShapeService) {
+              private shapeService: ShapeService,
+              private route: Router) {
     this.formGroup = this.formBuilder.group({
       width: ['', Validators.required],
       height: ['', Validators.required],
@@ -311,7 +313,11 @@ export class PlanDialogComponent implements OnInit, AfterViewInit {
     console.log(newShape);
 
     this.shapeService.createShape(newShape).subscribe({
-      next: (res: any) => console.log(res),
+      next: (res: any) => {
+        console.log(res);
+        this.route.navigateByUrl('/grundriss').then(() => {
+        });
+      },
       error: (err: any) => console.log(err)
     })
   }
