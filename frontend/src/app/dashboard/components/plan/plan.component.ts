@@ -1,4 +1,4 @@
-import {AfterViewInit, Component, OnInit} from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import {FormArray, FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {Shape} from '../../../shared/model/shape';
 import * as d3 from 'd3';
@@ -9,10 +9,10 @@ import {Router} from "@angular/router";
 
 @Component({
   selector: 'app-plan-dialog',
-  templateUrl: './plan-dialog.component.html',
-  styleUrls: ['./plan-dialog.component.scss']
+  templateUrl: './plan.component.html',
+  styleUrls: ['./plan.component.scss']
 })
-export class PlanDialogComponent implements OnInit, AfterViewInit {
+export class PlanComponent implements OnInit {
 
   public formGroup !: FormGroup;
   public shape!: Shape;
@@ -28,157 +28,6 @@ export class PlanDialogComponent implements OnInit, AfterViewInit {
       height: ['', Validators.required],
       elements: this.formBuilder.array([]),
     });
-    this.shape = {
-      id: '',
-      width: 300,
-      height: 300,
-      elements: [
-        {
-          id: '',
-          type: 'Line',
-          start: '10:290',
-          end: '290:290',
-          shape: null,
-          room: null,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        },
-        {
-          id: '',
-          type: 'Line',
-          start: '290:290',
-          end: '290:160',
-          shape: null,
-          room: null,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        },
-        {
-          id: '',
-          type: 'Line',
-          start: '290:130',
-          end: '290:10',
-          shape: null,
-          room: null,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        },
-        {
-          id: '',
-          type: 'Line',
-          start: '290:10',
-          end: '10:10',
-          shape: null,
-          room: null,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        },
-        {
-          id: '',
-          type: 'Line',
-          start: '10:10',
-          end: '10:290',
-          shape: null,
-          room: null,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        },
-        {
-          id: '',
-          type: 'Line',
-          start: '140:10',
-          end: '140:130',
-          shape: null,
-          room: null,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        },
-        {
-          id: '',
-          type: 'Line',
-          start: '110:160',
-          end: '110:290',
-          shape: null,
-          room: null,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        },
-        {
-          id: '',
-          type: 'Line',
-          start: '10:130',
-          end: '110:130',
-          shape: null,
-          room: null,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        },
-        {
-          id: '',
-          type: 'Line',
-          start: '170:130',
-          end: '290:130',
-          shape: null,
-          room: null,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        },
-        {
-          id: '',
-          type: 'Line',
-          start: '140:160',
-          end: '290:160',
-          shape: null,
-          room: null,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        },
-        {
-          id: '',
-          type: 'Sensor',
-          start: '70:70',
-          end: '0:',
-          shape: null,
-          room: null,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        },
-        {
-          id: '',
-          type: 'Sensor',
-          start: '220:70',
-          end: '0:',
-          shape: null,
-          room: null,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        },
-        {
-          id: '',
-          type: 'Sensor',
-          start: '220:240',
-          end: '0:',
-          shape: null,
-          room: null,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        },
-        {
-          id: '',
-          type: 'Sensor',
-          start: '60:210',
-          end: '0:0',
-          shape: null,
-          room: null,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        }
-      ],
-      rooms: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }
-    this.addShapeToFromGroup();
   }
 
   ngOnInit(): void {
@@ -186,14 +35,6 @@ export class PlanDialogComponent implements OnInit, AfterViewInit {
       next: (res: any) => this.rooms = res.data,
       error: (err: any) => console.log(err)
     });
-    this.createShape();
-  }
-
-  ngAfterViewInit(): void {
-    this.createShape();
-    for (let i = 0; i < this.elementControls.length; i++) {
-      this.addElementToSVG(i);
-    }
   }
 
   createShape() {

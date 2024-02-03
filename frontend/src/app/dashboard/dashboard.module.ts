@@ -17,9 +17,9 @@ import {SharedModule} from "../shared/shared.module";
 import {NgForOf, NgIf, NgSwitch, NgSwitchCase, NgSwitchDefault} from "@angular/common";
 import {RoomComponent} from './components/room/room.component';
 import {UpdateRoomComponent} from './components/update-room/update-room.component';
-import {GrundrissComponent} from './components/grundriss/grundriss.component';
+import {PlansComponent} from './components/plans/plans.component';
 import {StatusDialogComponent} from './components/status-dialog/status-dialog.component';
-import {PlanDialogComponent} from './components/plan-dialog/plan-dialog.component';
+import {PlanComponent} from './components/plan/plan.component';
 import {MatIconModule} from "@angular/material/icon";
 
 
@@ -32,9 +32,9 @@ import {MatIconModule} from "@angular/material/icon";
     DataViewComponent,
     AddRoomComponent,
     UpdateRoomComponent,
-    GrundrissComponent,
+    PlansComponent,
     StatusDialogComponent,
-    PlanDialogComponent
+    PlanComponent
   ],
   exports: [
     SensorsComponent,

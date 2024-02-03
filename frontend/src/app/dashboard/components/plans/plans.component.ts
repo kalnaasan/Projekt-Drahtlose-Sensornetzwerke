@@ -7,10 +7,10 @@ import {Router} from "@angular/router";
 
 @Component({
   selector: 'app-grundriss',
-  templateUrl: './grundriss.component.html',
-  styleUrls: ['./grundriss.component.scss']
+  templateUrl: './plans.component.html',
+  styleUrls: ['./plans.component.scss']
 })
-export class GrundrissComponent implements OnInit {
+export class PlansComponent implements OnInit {
   private shape!: Shape;
 
   constructor(private shapeService: ShapeService,
