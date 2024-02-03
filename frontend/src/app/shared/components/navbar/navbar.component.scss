@@ -1,20 +1,11 @@
-.example-spacer {
-  flex: 1 1 auto;
-}
-
 mat-toolbar {
   background-color:  #3f51b5;
 }
 
-.logo {
-  text-decoration: none;
-  color: inherit;
-}
-.name{
-  margin-right: 700px;
-  color: white;
-  font-size: x-large;
-}
-.white-icon {
-  color: white;
+.hover:hover{
+  background-color: white;
+  color: #3f51b5;
+  span , mat-icon{
+    color: #3f51b5;
+  }
 }
