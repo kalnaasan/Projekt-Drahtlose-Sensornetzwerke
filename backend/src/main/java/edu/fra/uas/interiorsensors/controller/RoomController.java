@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -133,7 +134,8 @@ public class RoomController {
                 values.add(lastValueDTO);
             }
         }
-        BoardDTO boardDTO = new BoardDTO(sensors.get(0).getName().split("_")[0], values);
+        values.sort(Comparator.comparing(ValueMeasureDTO::getType));
+        BoardDTO boardDTO = new BoardDTO(sensors.get(0).getName().split("_")[0], room.getName(), values);
         return this.message("current values of Sensor", boardDTO, HttpStatus.OK);
     }
 
