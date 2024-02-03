@@ -3,7 +3,6 @@ import {ShapeService} from "../../../shared/services/shape.service";
 import * as d3 from "d3";
 import {Shape} from "../../../shared/model/shape";
 import {RoomService} from "../../../shared/services/RoomService";
-import {Room} from "../../common/room";
 import {Router} from "@angular/router";
 
 @Component({
@@ -13,9 +12,6 @@ import {Router} from "@angular/router";
 })
 export class GrundrissComponent implements OnInit {
   private shape!: Shape;
-  private currenValues: any[] = [];
-  private rooms: Room[] = [];
-
 
   constructor(private shapeService: ShapeService,
               private roomService: RoomService,
@@ -46,8 +42,7 @@ export class GrundrissComponent implements OnInit {
     return src;
   }
 
-  createShapes(shapes: Shape[]
-  ) {
+  createShapes(shapes: Shape[]) {
     for (let i = 0; i < shapes.length; i++) {
       this.createShape(shapes[i], i);
     }
@@ -61,11 +56,11 @@ export class GrundrissComponent implements OnInit {
       .attr('id', 'svg-container-' + index)
       .attr('class', 'col-12 col-sm-12 col-md-6 col-lg-6 col-xl-6 p-3 position-relative');
 
-/*    let btn = div.append("button")
-      .html('Edit')
-      .attr('id', 'btn-' + index)
-      .attr("class", "position-relative rounded-pill btn btn-primary me-3")
-      .style('max-height', '35px');*/
+    /*    let btn = div.append("button")
+          .html('Edit')
+          .attr('id', 'btn-' + index)
+          .attr("class", "position-relative rounded-pill btn btn-primary me-3")
+          .style('max-height', '35px');*/
 
     const svg = div.append('svg')
       .attr('width', width)
