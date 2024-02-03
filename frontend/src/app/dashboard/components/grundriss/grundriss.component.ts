@@ -108,11 +108,10 @@ export class GrundrissComponent implements OnInit {
               let content = shape.elements[i].room?.name + ':<br>';
               res.data = this.convertDataToChartData(res.data);
               for (const value of res.data.valueMeasures) {
-                content += ' - ' + value.type + ': ' + value.value;
-                if (value.type.toLowerCase().includes('co2')) content += ' PPM' + '<br>';
-                else if (value.type.toLowerCase().includes('hum')) content += ' %' + '<br>';
-                else if (value.type.toLowerCase().includes('temp')) content += ' °C' + '<br>';
-                else if (value.type.toLowerCase().includes('voc')) content += ' index' + '<br>';
+                if (value.type.toLowerCase().includes('co2')) content += ' - CO2: ' + value.value + ' PPM' + '<br>';
+                else if (value.type.toLowerCase().includes('hum')) content += ' - Humidity: ' + value.value + ' %' + '<br>';
+                else if (value.type.toLowerCase().includes('temp')) content += ' - Temperature: ' + value.value + ' °C' + '<br>';
+                else if (value.type.toLowerCase().includes('voc')) content += ' - VOC: ' + value.value + ' index' + '<br>';
               }
               tooltip.html(content).style("z-index", 1000);
             },
