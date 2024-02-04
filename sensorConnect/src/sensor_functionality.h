@@ -43,4 +43,6 @@ void print_measurement();
 
 char* create_coap_message(struct k_heap* heap, int16_t *ret);
 
+void forced_co2_recalibration(int16_t *error);
+
 #endif /* SENSOR_FUNCTIONALITY_H */

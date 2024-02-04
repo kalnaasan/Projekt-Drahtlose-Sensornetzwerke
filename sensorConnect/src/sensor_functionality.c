@@ -5,8 +5,7 @@
 #include "sensirion_i2c_hal.h"
 
 #define TEXTBUFFER_SIZE 256
-
-
+#define CO2_TARGET_VALUE 400;
 
 
 /* Sensor functionality */
@@ -150,8 +149,7 @@ void print_measurement()
 	printk("\n");
 }
 
-char* create_coap_message(struct k_heap* heap, int16_t *ret)
-{
+char* create_coap_message(struct k_heap* heap, int16_t *ret) {
 	char* jsonBuffer = (char*)k_heap_alloc(heap, TEXTBUFFER_SIZE, K_NO_WAIT);
 
 	*ret = snprintk(jsonBuffer, sizeof(jsonBuffer),
@@ -170,4 +168,24 @@ char* create_coap_message(struct k_heap* heap, int16_t *ret)
 	}
 
 	return jsonBuffer;
+}
+
+void forced_co2_recalibration(int16_t *error) {
+
+	uint16_t target_value = CO2_TARGET_VALUE;
+	uint16_t frc_correction;
+
+	*error = scd4x_perform_forced_recalibration(target_value, &frc_correction);
+	if(error) {
+		printk("Error executing scd4x_perform_forced_recalibration(): %i\n", *error);
+	}
+
+	k_msleep(400);
+
+	if(frc_correction == 0xffff) {
+		*error = frc_correction;
+		printk("Error: FRC Correction failed on SCD41: 0xffff\n");
+		return;
+	}
+	printk("frc_correction: %i\n", frc_correction);
 }
