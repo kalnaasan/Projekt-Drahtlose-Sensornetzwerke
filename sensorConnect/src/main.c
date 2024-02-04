@@ -3,11 +3,74 @@
 #include <openthread/thread.h>
 #include <openthread/coap.h>
 #include <stdio.h>
+#include <zephyr/drivers/gpio.h>
 
 #include "sensor_functionality.h"
 
+#define SLEEP_TIME_FIVE 5
+#define SLEEP_TIME_THIRTY 30
+#define SLEEP_TIME_SIXTY 60
+#define NO_SLEEP_TIME_SEC 0
+
+#define NO_ERROR 0
+
+#define BUTTON0_NODE DT_NODELABEL(button0) //DT_N_S_buttons_S_button_0
+#define BUTTON1_NODE DT_NODELABEL(button1) //DT_N_S_buttons_S_button_1
+#define BUTTON2_NODE DT_NODELABEL(button2) //DT_N_S_buttons_S_button_2
+#define BUTTON3_NODE DT_NODELABEL(button3) //DT_N_S_buttons_S_button_3
+
+/* Heap Allocation for JSON String (CoAP Message)*/
 #define TEXTBUFFER_SIZE 256
-#define SLEEP_TIME_SECONDS 60
+K_HEAP_DEFINE(text_buffer_heap, 512);
+
+/* Modes for Sensor Station */
+static enum sensor_station_mode { MEASURE, CONFIG_PERIOD, CALIBRATE} station_mode;
+static bool mode_switch;
+static bool calibration_selected;
+static bool run_per_measurement;
+/* List of events */
+#define EVENT_BTN1_PRESS BIT(0)
+#define EVENT_BTN2_PRESS BIT(1)
+#define EVENT_BTN3_PRESS BIT(2)
+
+/* Buttons*/
+static const struct gpio_dt_spec button0_spec = GPIO_DT_SPEC_GET(BUTTON0_NODE, gpios);
+static struct gpio_callback button0_cb;
+
+void button0_callback(const struct device *gpiob, struct gpio_callback *cb,
+                                     gpio_port_pins_t pins){
+	mode_switch = true;
+}
+
+static const struct gpio_dt_spec button1_spec = GPIO_DT_SPEC_GET(BUTTON1_NODE, gpios);
+static struct gpio_callback button1_cb;
+
+void button1_callback(const struct device *gpiob, struct gpio_callback *cb,
+                                     gpio_port_pins_t pins){
+    /* Generate Button Press Event */
+    k_event_post(&s_obj.smf_event, EVENT_BTN1_PRESS);
+    
+}
+
+static const struct gpio_dt_spec button2_spec = GPIO_DT_SPEC_GET(BUTTON2_NODE, gpios);
+static struct gpio_callback button2_cb;
+
+void button2_callback(const struct device *gpiob, struct gpio_callback *cb,
+                                     gpio_port_pins_t pins){
+    /* Generate Button Press Event */
+    k_event_post(&s_obj.smf_event, EVENT_BTN2_PRESS);
+    
+}
+
+static const struct gpio_dt_spec button3_spec = GPIO_DT_SPEC_GET(BUTTON3_NODE, gpios);
+static struct gpio_callback button3_cb;
+
+void button3_callback(const struct device *gpiob, struct gpio_callback *cb,
+                                     gpio_port_pins_t pins){
+    /* Generate Button Press Event */
+    k_event_post(&s_obj.smf_event, EVENT_BTN3_PRESS);
+    
+}
 
 /* CoAP */
 
@@ -19,16 +82,21 @@ void coap_send_data_request(char *message);
 
 /* SMF */
 
-int32_t smf_sleep_sec = 0;
+int32_t smf_sleep_sec = NO_SLEEP_TIME_SEC;
 
+/* Forward declaration of state table */
 static const struct smf_state states[];
 
-enum state { INIT, START_MEASUREMENT, READ_MEASUREMENT, SEND_DATA, IDLE_MODE};
+enum state { INIT, IDLE, START_MEASUREMENT, STOP_MEASUREMENT, READ_MEASUREMENT, SEND_DATA};
 
 struct s_object {
 	/* This must be first */
 	struct smf_ctx ctx;
-	/* other state specific data add here */
+	
+	/* Events */
+	struct k_event smf_event;
+	int32_t events;
+
 	int16_t error;
 } s_obj;
 
@@ -37,17 +105,81 @@ static void init_run(void *o){
 	printk("INIT\n");
 
 	struct s_object *s = (struct s_object *)o;
-	s->error = 0;
+	s->error = NO_ERROR;
 
-	/* Init I2C, SC41, SVM41 */
-	sensirion_i2c_hal_init();
-	clean_up_sensor_states(s->error);
+	/* Init Settings for Sensor Station */
+	station_mode = MEASURE;
+	mode_switch = false;
+
+	calib_mode = CO2;
+	calibration_selected = false;
+		
+	measure_period = FIVE;
+	run_per_measurement = false;
+
+
+	/* Init Sensor Measuring */
+	sensirion_i2c_hal_get();
+	clean_up_sensor_states(&(s->error));
+	if(s->error) {
+		printk("Error executing clean_up_sensor_states(): %i\n", s->error);
+		smf_set_state(SMF_CTX(&s_obj), &states[IDLE]);
+		return;
+	}
 
 	/* Init CoAP */
 	coap_init();
 
-	smf_sleep_sec = 0;
-	smf_set_state(SMF_CTX(&s_obj), &states[START_MEASUREMENT]);
+	smf_sleep_sec = 5;
+	smf_set_state(SMF_CTX(&s_obj), &states[IDLE]);
+}
+
+/* State IDLE */
+static void idle_run(void *o){
+	printk("IDLE\n");
+	
+	struct s_object *s = (struct s_object *)o;
+	s->error = NO_ERROR;
+	
+	/* Change states on Mode-Switch Button Press Event */
+	switch(station_mode) {
+		case CONFIG_PERIOD:
+			if(s->events & EVENT_BTN1_PRESS) measure_period = FIVE;
+			if(s->events & EVENT_BTN2_PRESS) measure_period = THIRTY;
+			if(s->events & EVENT_BTN3_PRESS) measure_period = SIXTY;
+			break;
+
+		case CALIBRATE:
+			if(s->events & EVENT_BTN1_PRESS) {
+				if(calib_mode == CO2) {} // Start calibration
+				else calib_mode = CO2;
+			}
+			if(s->events & EVENT_BTN2_PRESS) {
+				if(calib_mode == VOC) {} // Start calibration
+				else calib_mode = VOC;
+			}
+			if(s->events & EVENT_BTN3_PRESS) {
+				if(calib_mode == TEMP) {} // Start calibration
+				else calib_mode = TEMP;
+			}
+			break;
+
+		case MEASURE:
+		default:	 		
+			if(s->events & EVENT_BTN1_PRESS) {
+				run_per_measurement = true;
+			}
+			if(s->events & EVENT_BTN2_PRESS) {
+				run_per_measurement = false;
+			}
+			if(s->events & EVENT_BTN3_PRESS) {
+				// do nothing
+			}
+	}
+	
+	smf_sleep_sec = 1;
+	
+	smf_set_state(SMF_CTX(&s_obj), &states[IDLE]);
 }
 
 /* State START_MEASUREMENT */
@@ -55,13 +187,27 @@ static void start_measurement_run(void *o){
 	printk("START_MEASUREMENT\n");
 	
 	struct s_object *s = (struct s_object *)o;
-	s->error = 0;
+	s->error = NO_ERROR;
 	
 	/* Start periodic measurement */
-	start_measurement(s->error);
+	start_periodic_measurement(&(s->error));
 	
 	smf_sleep_sec = 10;
 	smf_set_state(SMF_CTX(&s_obj), &states[READ_MEASUREMENT]);
+}
+
+/* State STOP_MEASUREMENT */
+static void stop_measurement_run(void *o){
+	printk("STOP_MEASUREMENT\n");
+	
+	struct s_object *s = (struct s_object *)o;
+	s->error = NO_ERROR;
+	
+	/* Stop periodic measurement */
+	stop_periodic_measurement(&(s->error));
+	
+	smf_sleep_sec = 1;
+	smf_set_state(SMF_CTX(&s_obj), &states[IDLE]);
 }
 
 /* State READ_MEASUREMENT */
@@ -69,9 +215,9 @@ static void read_measurement_run(void *o){
 	printk("READ_MEASUREMENT\n");
 
 	struct s_object *s = (struct s_object *)o;
-	s->error = 0;
+	s->error = NO_ERROR;
 
-	read_measurement();
+	read_measurement(&(s->error));
 	print_measurement();
 
 	smf_sleep_sec = 0;
@@ -81,57 +227,66 @@ static void read_measurement_run(void *o){
 /* State SEND_DATA */
 static void send_data_run(void *o){
 	printk("SEND_DATA\n");
+
+	struct s_object *s = (struct s_object *)o;
+	s->error = NO_ERROR;
 	
 	// Use shared_data for CoAP communication
-	const char* my_sensor_data= (char*)malloc(TEXTBUFFER_SIZE * sizeof(char));
-	my_sensor_data = create_coap_message();
+	char* my_sensor_data;
+	my_sensor_data = create_coap_message(&text_buffer_heap, &(s->error));
 	coap_send_data_request(my_sensor_data);
-	free(my_sensor_data);
+	k_heap_free(&text_buffer_heap, my_sensor_data);
 
-	smf_sleep_sec = SLEEP_TIME_SECONDS;
+	smf_sleep_sec = SLEEP_TIME_FIVE;
 	smf_set_state(SMF_CTX(&s_obj), &states[READ_MEASUREMENT]);
 }
 
-/* State STOP_MEASUREMENT */
-static void stop_measurement_run(void *o){
-	printk("STOP_MEASUREMENT\n");
+/* State START_CONFIG_MEASUREMENT */
+static void start_config_measurement_run(void *o){
+	printk("START_MEASUREMENT\n");
 	
 	struct s_object *s = (struct s_object *)o;
-	s->error = 0;
+	s->error = NO_ERROR;
 	
-	/* Stop periodic measurement */
-	stop_measurement(s->error);
+	/* Start periodic measurement */
+	start_periodic_measurement(&(s->error));
 	
 	smf_sleep_sec = 10;
 	smf_set_state(SMF_CTX(&s_obj), &states[READ_MEASUREMENT]);
-}
-
-/* State IDLE_MODE */
-static void idle_mode_run(void *o){
-	printk("IDLE_MODE\n");
-	
-	struct s_object *s = (struct s_object *)o;
-	s->error = 0;
-	
-	/* */
-	
-	smf_sleep_sec = 0;
-	smf_set_state(SMF_CTX(&s_obj), &states[IDLE_MODE]);
 }
 
 /* Populate state table */
 
 static const struct smf_state states[] = {
 	[INIT] = SMF_CREATE_STATE(NULL, init_run, NULL),
+	[IDLE] = SMF_CREATE_STATE(NULL, idle_run, NULL),
 	[START_MEASUREMENT] = SMF_CREATE_STATE(NULL, start_measurement_run, NULL),
+	[STOP_MEASUREMENT] = SMF_CREATE_STATE(NULL, stop_measurement_run, NULL),
 	[READ_MEASUREMENT] = SMF_CREATE_STATE(NULL, read_measurement_run, NULL),
-	[SEND_DATA] = SMF_CREATE_STATE(NULL, send_data_run, NULL),
-	[IDLE_MODE] = SMF_CREATE_STATE(NULL, idle_mode_run, NULL),
+	[SEND_DATA] = SMF_CREATE_STATE(NULL, send_data_run, NULL)
 };
 
 void main(void)
 {
 	int32_t ret;
+
+	if (!gpio_is_ready_dt(&button0_spec)) {
+		printk("Error: button device %s is not ready\n",
+				button0_spec.port->name);
+		return;
+	}
+
+	//init button(s)
+	gpio_pin_configure_dt(&button0_spec, GPIO_INPUT);
+
+    gpio_pin_interrupt_configure_dt(&button0_spec, GPIO_INT_EDGE_TO_ACTIVE);
+    gpio_init_callback(&button0_cb, button0_callback, BIT(button0_spec.pin) );
+    gpio_add_callback(button0_spec.port, &button0_cb);
+
+	
+
+	/* Initialize the event */
+        k_event_init(&s_obj.smf_event);
 
 	/* Set init state */
 	smf_set_initial(SMF_CTX(&s_obj), &states[INIT]);
@@ -139,9 +294,18 @@ void main(void)
 	while (1) {
 		ret = smf_run_state(SMF_CTX(&s_obj));
 		if(ret) {
-			printk("Error: %d\n", ret);
+			printk("SMF Run State Error: %d\n", ret);
 			smf_set_initial(SMF_CTX(&s_obj), &states[INIT]);
-			smf_sleep_sec = 60;
+			smf_sleep_sec = 10;
+		}
+		if(mode_switch) {
+			switch(station_mode) {
+				case CONFIG_PERIOD: station_mode = CALIBRATE; break;
+				case CALIBRATE: 	station_mode = MEASURE; break;
+				case MEASURE:
+				default:	 		station_mode = CONFIG_PERIOD;
+			};
+			mode_switch = false;
 		}
 		k_sleep(K_SECONDS(smf_sleep_sec));
 	}
