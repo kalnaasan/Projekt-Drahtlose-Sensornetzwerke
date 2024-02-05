@@ -38,4 +38,29 @@ char *create_coap_message();
 
 void forced_co2_recalibration(int16_t *error);
 
+static const char* measure_period_to_string(enum measure_period m_period) {
+	switch (m_period) {	
+        case FIVE:
+            return "FIVE";
+        case THIRTY:
+            return "THIRTY";
+        case SIXTY:
+            return "SIXTY";
+        default:
+            return "Unknown";
+    }
+}
+static const char* calib_mode_to_string(enum calibration_mode c_mode) {
+	switch (c_mode) {	
+        case CO2:
+            return "CO2";
+        case TEMP:
+            return "TEMP";
+        case VOC:
+            return "VOC";
+        default:
+            return "Unknown";
+    }
+}
+
 #endif /* SENSOR_FUNCTIONALITY_H */

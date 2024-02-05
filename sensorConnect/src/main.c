@@ -1,3 +1,4 @@
+#include <zephyr/logging/log.h>
 #include <dk_buttons_and_leds.h>
 #include <zephyr/smf.h>
 #include <zephyr/net/openthread.h>
@@ -26,6 +27,7 @@ static enum sensor_station_mode {
 	CALIBRATE
 } station_mode;
 
+static const char* station_mode_to_string(enum sensor_station_mode s_mode);
 static bool mode_switch;
 
 static bool btn2_pressed;
@@ -269,18 +271,7 @@ static void init_run(void *o){
 	smf_set_state(SMF_CTX(&s_obj), &states[IDLE]);
 }
 
-const char* station_mode_to_string(enum sensor_station_mode s_mode) {
-    switch (s_mode) {
-        case MEASURE:
-            return "MEASURE";
-        case CONFIG_PERIOD:
-            return "CONFIG_PERIOD";
-        case CALIBRATE:
-            return "CALIBRATE";
-        default:
-            return "Unknown";
-    }
-}
+
 /* State IDLE */
 static void idle_run(void *o){
 	printk("IDLE\tMode: %s\n", station_mode_to_string(station_mode));
@@ -291,6 +282,7 @@ static void idle_run(void *o){
 	/* Change states on Mode-Switch Button Press Event */
 	switch(station_mode) {
 		case CONFIG_PERIOD:
+			dk_set_led_on(DK_LED2);
 			if(btn2_pressed) {
 				measure_period = FIVE;
 				printk("Period Change to FIVE\n");
@@ -311,13 +303,13 @@ static void idle_run(void *o){
 			}
 			if(new_led_state) {
 				dk_set_leds(DK_NO_LEDS_MSK);
-				dk_set_led_on(DK_LED2);
 				set_blinking_led();
 				new_led_state = false;
 			}
 			break;
 
 		case CALIBRATE:
+			dk_set_led_on(DK_LED3);
 			if(btn2_pressed) {
 				if(calib_mode == CO2 && run_calibration) {
 					smf_set_state(SMF_CTX(&s_obj), &states[START_CALIB_MEASUREMENT]);
@@ -384,14 +376,14 @@ static void idle_run(void *o){
 			}
 			if(new_led_state) {
 				dk_set_leds(DK_NO_LEDS_MSK);
-				dk_set_led_on(DK_LED3);
 				set_blinking_led();
 				new_led_state = false;
 			}
 			break;
 
 		case MEASURE:
-		default:	 		
+		default:
+			dk_set_led_on(DK_LED1); 		
 			if(btn2_pressed) {
 				if(run_per_measurement) {
 					smf_set_state(SMF_CTX(&s_obj), &states[START_MEASUREMENT]);
@@ -419,20 +411,19 @@ static void idle_run(void *o){
 			}
 			if(new_led_state) {
 				dk_set_leds(DK_NO_LEDS_MSK);
-				dk_set_led_on(DK_LED1);
 				set_blinking_led();
 				new_led_state = false;
 			}
 			break;
 	}
 	
-	smf_sleep_sec = SLEEP_TIME_ONE;
+	smf_sleep_sec = NO_SLEEP_TIME;
 	smf_set_state(SMF_CTX(&s_obj), &states[IDLE]);
 }
 
 /* State START_MEASUREMENT */
 static void start_measurement_run(void *o){
-	printk("START_MEASUREMENT\tmeasure_period: %i\n", measure_period);
+	printk("START_MEASUREMENT\tmeasure_period: %s\n", measure_period_to_string(measure_period));
 
 	struct s_object *s = (struct s_object *)o;
 	s->error = NO_ERROR;
@@ -539,13 +530,9 @@ static void send_data_run(void *o){
 }
 
 /* State START_CALIB_MEASUREMENT */
-static void start_calib_measurement_entry(void *o) {
-	printk("START_CALIB_MEASUREMENT\n");// do sth
-}
-
 static void start_calib_measurement_run(void *o){
 	
-	
+	printk("START_CALIB_MEASUREMEN, calib_mode: %s, measure_period: %s\n", calib_mode_to_string(calib_mode), measure_period_to_string(measure_period));
 	struct s_object *s = (struct s_object *)o;
 	s->error = NO_ERROR;
 
@@ -576,13 +563,9 @@ static void start_calib_measurement_run(void *o){
 }
 
 /* State CALIB_READY */
-static void calib_ready_entry(void *o) {
-	printk("CALIB_READY\n");// do sth
-}
-
 static void calib_ready_run(void *o){
-	
-	
+	printk("CALIB_READY\n");
+
 	struct s_object *s = (struct s_object *)o;
 	s->error = NO_ERROR;
 	set_blinking_led();
@@ -612,12 +595,8 @@ static void calib_ready_run(void *o){
 }
 
 /* State FRC */
-static void frc_entry(void *o) {
-	printk("FRC\n");// do sth
-}
-
 static void frc_run(void *o){
-	
+	printk("FRC\n");
 	
 	struct s_object *s = (struct s_object *)o;
 	s->error = NO_ERROR;
@@ -647,9 +626,9 @@ static const struct smf_state states[] = {
 	[STOP_MEASUREMENT] = SMF_CREATE_STATE(NULL, stop_measurement_run, NULL),
 	[READ_MEASUREMENT] = SMF_CREATE_STATE(NULL, read_measurement_run, NULL),
 	[SEND_DATA] = SMF_CREATE_STATE(NULL, send_data_run, NULL),
-	[START_CALIB_MEASUREMENT] = SMF_CREATE_STATE(start_calib_measurement_entry, start_calib_measurement_run, NULL),
-	[CALIB_READY] = SMF_CREATE_STATE(calib_ready_entry, calib_ready_run, NULL),
-	[FRC] = SMF_CREATE_STATE(frc_entry, frc_run, NULL)
+	[START_CALIB_MEASUREMENT] = SMF_CREATE_STATE(NULL, start_calib_measurement_run, NULL),
+	[CALIB_READY] = SMF_CREATE_STATE(NULL, calib_ready_run, NULL),
+	[FRC] = SMF_CREATE_STATE(NULL, frc_run, NULL)
 };
 
 
@@ -803,4 +782,17 @@ void coap_send_data_request(char *message)
 	{
 		printk("CoAP data send.\n");
 	}
+}
+
+static const char* station_mode_to_string(enum sensor_station_mode s_mode) {
+    switch (s_mode) {
+        case MEASURE:
+            return "MEASURE";
+        case CONFIG_PERIOD:
+            return "CONFIG_PERIOD";
+        case CALIBRATE:
+            return "CALIBRATE";
+        default:
+            return "Unknown";
+    }
 }
