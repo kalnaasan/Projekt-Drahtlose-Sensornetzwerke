@@ -16,7 +16,7 @@ export class PlanComponent implements AfterViewInit, OnInit {
 
   public formGroup !: FormGroup;
   public shape!: Shape;
-  protected svg: any;
+  protected svg!: any;
   public rooms: any[] = [];
   protected id!: string;
 
@@ -37,6 +37,7 @@ export class PlanComponent implements AfterViewInit, OnInit {
       next: (res: any) => this.rooms = res.data,
       error: (err: any) => console.log(err)
     });
+    console.log(this.svg)
     this.activatedRoute.paramMap.subscribe((params: any) => {
       if (params.params['id']) {
         this.id = params.params['id'];
@@ -74,6 +75,7 @@ export class PlanComponent implements AfterViewInit, OnInit {
       .attr('width', width)
       .attr('height', height)
       .attr('class', 'border border-dark border-2');
+    console.log(this.svg )
   }
 
   get elements() {
@@ -214,7 +216,7 @@ export class PlanComponent implements AfterViewInit, OnInit {
 
     for (let node of children as HTMLElement[]) {
       const startX: number = parseInt(element.controls['start'].value.split(':')[0], 10);
-      const startY: number = this.shape.height - parseInt(element.controls['start'].value.split(':')[1], 10);
+      const startY: number = this.formGroup.get('height')?.value - parseInt(element.controls['start'].value.split(':')[1], 10);
       if (element.controls['type'].value.toLowerCase() === 'sensor' && node.id.toLowerCase().includes('circle')) {
         if (parseInt(node.getAttribute('cx') || '0', 10) === startX &&
           parseInt(node.getAttribute('cy') || '0', 10) === startY) {
@@ -223,7 +225,7 @@ export class PlanComponent implements AfterViewInit, OnInit {
         }
       } else if (element.controls['type'].value.toLowerCase() === 'line' && node.id.toLowerCase().includes('line')) {
         const endX: number = parseInt(element.controls['end'].value.split(':')[0], 10);
-        const endY: number = this.shape.height - parseInt(element.controls['end'].value.split(':')[1], 10);
+        const endY: number = this.formGroup.get('height')?.value - parseInt(element.controls['end'].value.split(':')[1], 10);
         if (parseInt(node.getAttribute('x1') || '0', 10) === startX &&
           parseInt(node.getAttribute('y1') || '0', 10) === startY &&
           parseInt(node.getAttribute('x2') || '0', 10) === endX &&
@@ -239,7 +241,6 @@ export class PlanComponent implements AfterViewInit, OnInit {
   private removeElementFromFormGroup(element: any){
     for (let i = 0; i < this.elementControls.length; i++){
       if (this.elementControls[i] === element){
-        console.log('found');
         this.elements.removeAt(i);
       }
     }
