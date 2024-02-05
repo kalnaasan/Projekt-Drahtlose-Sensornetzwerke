@@ -28,27 +28,46 @@ void clean_up_sensor_states(int16_t *error)
 	}
 }
 
-void start_periodic_measurement(int16_t *error)
+void start_periodic_measurement(int16_t *error, bool svm41)
 {
-	// SCD41
-	switch(measure_period) {
-		case FIVE:		*error = scd4x_start_periodic_measurement(); break;
-		case THIRTY:
-		case SIXTY:		*error = scd4x_start_low_power_periodic_measurement(); break;
-		default:		break; //SITXTY -> single shot in idle mode 
-	}
-	if (*error)
-	{
-		printk("Error executing scd41x_[low_power_]start_periodic_measurement(): %i\n", *error);
-	}
-		return;
+	*error = 0;
 	
-	// SVM41
-	*error = svm41_start_measurement();
+	switch(measure_period) {
+
+		case FIVE:		*error = scd4x_start_periodic_measurement(); break;
+		case THIRTY:	*error = scd4x_start_low_power_periodic_measurement(); break;
+		case SIXTY:		*error = scd4x_stop_periodic_measurement();break; //SITXTY -> single shot in idle mode, measure single shot before reading
+		
+		default:		printk("Error measure_period unkown: %i", measure_period);
+						return;
+	}
+
 	if (*error)
 	{
-		printk("Error executing svm41_start_measurement(): %i\n", *error);
+		printk("Error executing scd4x_[low_power_]start_periodic_measurement(): %i\n", *error);
 		return;
+	}
+	
+		
+	
+	if(svm41) {
+		*error = svm41_start_measurement();
+		if (*error)
+		{
+			printk("Error executing svm41_start_measurement(): %i\n", *error);
+			return;
+		}
+	}
+}
+
+void perform_single_measurement_scd41(int16_t *error) {
+	*error = 0;
+
+	printk("-> perform_single_measurement_scd41()\n");
+	*error = scd4x_measure_single_shot();
+	if (*error)
+	{
+		printk("Error executing scd4x_measure_single_shot(): %i\n", *error);
 	}
 }
 

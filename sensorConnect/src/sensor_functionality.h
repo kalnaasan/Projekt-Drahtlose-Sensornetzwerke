@@ -24,7 +24,9 @@ static bool valid_SVM41_data = false;
 
 void clean_up_sensor_states(int16_t* error);
 
-void start_periodic_measurement(int16_t* error);
+void start_periodic_measurement(int16_t *error, bool svm41);
+
+void perform_single_measurement_scd41(int16_t *error);
 
 void stop_periodic_measurement(int16_t *error);
 

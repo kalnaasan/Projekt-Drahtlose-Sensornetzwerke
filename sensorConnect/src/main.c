@@ -432,7 +432,7 @@ static void idle_run(void *o){
 
 /* State START_MEASUREMENT */
 static void start_measurement_run(void *o){
-	printk("START_MEASUREMENT\n");
+	printk("START_MEASUREMENT\tmeasure_period: %i\n", measure_period);
 
 	struct s_object *s = (struct s_object *)o;
 	s->error = NO_ERROR;
@@ -442,7 +442,7 @@ static void start_measurement_run(void *o){
 	blinking_led = DK_LED1;
 	
 	/* Start periodic measurement */
-	start_periodic_measurement(&(s->error));
+	start_periodic_measurement(&(s->error), true);
 
 	if(sleep_interruptable(SLEEP_TIME_TEN)) {
 		smf_set_state(SMF_CTX(&s_obj), &states[STOP_MEASUREMENT]);
@@ -486,6 +486,11 @@ static void read_measurement_run(void *o){
 
 	stop_blinking_led();
 
+	/* for SIXTY second period, a single shot is performed */
+	if(measure_period == SIXTY) {
+		perform_single_measurement_scd41(&(s->error));
+	}
+	/* Read the Measurement */
 	read_measurement(&(s->error));
 	print_measurement();
 
@@ -547,8 +552,8 @@ static void start_calib_measurement_run(void *o){
 	set_select_led();
 	switch(calib_mode) {
 		case CO2:
-			/* easure for 3 Minutes CO2	*/
-			start_periodic_measurement(&(s->error));
+			/* measure CO2 for 3 Minutes */
+			start_periodic_measurement(&(s->error), false);
 			if(s->error) return;
 
 			if(sleep_interruptable(SLEEP_TIME_THREE_MIN)) {
@@ -676,8 +681,11 @@ int main(void)
 		if(ret) {
 			printk("SMF Run State Error: %d\n", ret);
 			smf_set_initial(SMF_CTX(&s_obj), &states[INIT]);
-			smf_sleep_sec = SLEEP_TIME_TEN;
+			smf_sleep_sec = SLEEP_TIME_ONE;
 			continue;
+		}
+		if(s_obj.error) {
+			// Error while running state;
 		}
 		if(btn4_pressed && (run_calibration || run_per_measurement|| run_frc)) {
 			smf_set_state(SMF_CTX(&s_obj), &states[STOP_MEASUREMENT]);
