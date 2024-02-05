@@ -203,7 +203,7 @@ void forced_co2_recalibration(int16_t *error) {
 	uint16_t frc_correction;
 
 	*error = scd4x_perform_forced_recalibration(target_value, &frc_correction);
-	if(error) {
+	if(*error) {
 		printk("Error executing scd4x_perform_forced_recalibration(): %i\n", *error);
 	}
 
