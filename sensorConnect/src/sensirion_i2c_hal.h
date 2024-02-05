@@ -8,27 +8,10 @@ extern "C" {
 #endif /* __cplusplus */
 
 /**
- * Select the current i2c bus by index.
- * All following i2c operations will be directed at that bus.
- *
- * THE IMPLEMENTATION IS OPTIONAL ON SINGLE-BUS SETUPS (all sensors on the same
- * bus)
- *
- * @param bus_idx   Bus index to select
- * @returns         0 on success, an error code otherwise
- */
-int16_t sensirion_i2c_hal_select_bus(uint8_t bus_idx);
-
-/**
  * Initialize all hard- and software components that are needed for the I2C
  * communication.
  */
-void sensirion_i2c_hal_init(void);
-
-/**
- * Release all resources initialized by sensirion_i2c_hal_init().
- */
-void sensirion_i2c_hal_free(void);
+void sensirion_i2c_hal_get(void);
 
 /**
  * Execute one read transaction on the I2C bus, reading a given number of bytes.

@@ -7,35 +7,23 @@
 #include "sensirion_config.h"
 #include "sensirion_i2c_hal.h"
 
-
-/**
- * Define I2C Node.
- */
 #define I2C_NODE		DT_NODELABEL(i2c0)
+
 static const struct device *i2c_dev;
 
 /**
- * Initialize all hard- and software components that are needed for the I2C
- * communication.
+ * Get all hard- and software components that are needed for the I2C
+ * communication from Zephyr Device Tree.
  */
-void sensirion_i2c_hal_init(void) {
+void sensirion_i2c_hal_get(void) {
     
-    /* initiate TWI instance */
+    /* Get I2C Connection */
     i2c_dev = DEVICE_DT_GET(I2C_NODE);
     if (!device_is_ready(i2c_dev)) {
         
         printk("Initialization of I2C connection failed!\n");
     }
-    /* enable TWI instance */
-    // -----> is this needed with the device here?
     return;
-}
-
-/**
- * Release all resources initialized by sensirion_i2c_hal_init().
- */
-void sensirion_i2c_hal_free(void) {
-    // -----> Check, if needed.
 }
 
 /**
