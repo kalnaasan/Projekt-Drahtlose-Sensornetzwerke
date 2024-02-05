@@ -34,9 +34,9 @@ export class PlansComponent implements OnInit {
     for (let i = 0; i < src.valueMeasures.length; i++) {
       if (src.valueMeasures[i].type.toLowerCase().includes('temp') || src.valueMeasures[i].type.toLowerCase().includes('hum')) {
         src.valueMeasures[i].value = Math.round(src.valueMeasures[i].value / 1000);
-      } else if (src.valueMeasures[i].type.toLowerCase().includes('voc')) {
+      } /*else if (src.valueMeasures[i].type.toLowerCase().includes('voc')) {
         src.valueMeasures[i].value = Math.round(src.valueMeasures[i].value / 10);
-      }
+      }*/
       src.valueMeasures[i].value = Math.round(src.valueMeasures[i].value);
     }
     return src;
@@ -48,6 +48,15 @@ export class PlansComponent implements OnInit {
     }
   }
 
+  editShape() {
+    console.log('BTN EDIT')
+  }
+
+  onEditClick(id: string) {
+    this.router.navigateByUrl('/plan/update/' + id).then(() => {
+    });
+  }
+
   createShape(shape: Shape, index: number) {
     const width: number = shape.width;
     const height: number = shape.height;
@@ -56,11 +65,17 @@ export class PlansComponent implements OnInit {
       .attr('id', 'svg-container-' + index)
       .attr('class', 'col-12 col-sm-12 col-md-6 col-lg-6 col-xl-6 p-3 position-relative');
 
-    /*    let btn = div.append("button")
-          .html('Edit')
-          .attr('id', 'btn-' + index)
-          .attr("class", "position-relative rounded-pill btn btn-primary me-3")
-          .style('max-height', '35px');*/
+    let btn = div.append("button")
+      .attr('id', 'btn-' + index)
+      .attr("class", "position-relative rounded-pill btn btn-primary me-3 d-flex align-items-center justify-content-center")
+      .style('max-height', '35px')
+      .on('click', () => {
+        this.onEditClick(shape.id)
+      })
+      .append('mat-icon').html('edit')
+      .attr('role', 'img')
+      .attr('aria-hidden', 'true')
+      .attr('class', 'mat-icon notranslate material-icons mat-ligature-font mat-icon-no-color');
 
     const svg = div.append('svg')
       .attr('width', width)
@@ -75,9 +90,9 @@ export class PlansComponent implements OnInit {
 
     for (let i = 0; i < shape.elements.length; i++) {
       const startX = parseInt(shape.elements[i].start.split(':')[0], 10);
-      const startY = parseInt(shape.elements[i].start.split(':')[1], 10);
+      const startY = shape.height - parseInt(shape.elements[i].start.split(':')[1], 10);
       const endX = parseInt(shape.elements[i].end.split(':')[0], 10);
-      const endY = parseInt(shape.elements[i].end.split(':')[1], 10);
+      const endY = shape.height - parseInt(shape.elements[i].end.split(':')[1], 10);
 
       if (shape.elements[i].type.toLowerCase() === 'line') {
         svg.append('line')
