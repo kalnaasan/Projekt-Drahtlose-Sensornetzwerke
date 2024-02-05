@@ -14,8 +14,7 @@
 
 #define NO_ERROR 0
 
-/* Heap Allocation for JSON String (CoAP Message)*/
-K_HEAP_DEFINE(my_text_buffer_heap, 512);
+#define NO_BLINKING_LED 5
 
 /* Modes for Sensor Station */
 static enum sensor_station_mode { 
@@ -30,9 +29,148 @@ static bool btn2_pressed;
 static bool btn3_pressed;
 static bool btn4_pressed;
 
-static bool calibration_selected;
+static bool run_calibration;
 static bool run_per_measurement;
 static bool run_frc;
+
+static bool new_led_state;
+static uint8_t blinking_led;
+
+static struct k_work blinking_led_3sec_work;
+static struct k_timer blinking_led_timer;
+
+static void set_blinking_led() {
+
+	k_timer_stop(&blinking_led_timer);
+	switch(station_mode) {
+		case CONFIG_PERIOD:
+			switch (measure_period) {
+				case SIXTY:
+					blinking_led = DK_LED4;
+					break;
+				case THIRTY:
+					blinking_led = DK_LED3;
+					break;
+				case FIVE:
+				default:
+					blinking_led = DK_LED1;
+			}
+			break;
+
+		case CALIBRATE:
+			switch (calib_mode) {
+				case VOC:
+					blinking_led = DK_LED2;
+					break;
+				case TEMP:
+					blinking_led = DK_LED4;
+					break;
+				case CO2:
+				default:
+					blinking_led = DK_LED1;
+			}
+			break;
+		case MEASURE:
+		default:
+			blinking_led = NO_BLINKING_LED; 		
+	}
+	if(blinking_led != NO_BLINKING_LED) {
+		k_timer_start(&blinking_led_timer, K_MSEC(500), K_MSEC(500));
+	}
+}
+
+static void set_select_led() {
+
+	k_timer_stop(&blinking_led_timer);
+	switch(station_mode) {
+		case CONFIG_PERIOD:
+			switch (measure_period) {
+				case SIXTY:
+					blinking_led = DK_LED4;
+					break;
+				case THIRTY:
+					blinking_led = DK_LED3;
+					break;
+				case FIVE:
+				default:
+					blinking_led = DK_LED1;
+			}
+			break;
+
+		case CALIBRATE:
+			switch (calib_mode) {
+				case VOC:
+					blinking_led = DK_LED2;
+					break;
+				case TEMP:
+					blinking_led = DK_LED4;
+					break;
+				case CO2:
+				default:
+					blinking_led = DK_LED1;
+			}
+			break;
+		case MEASURE:
+		default:
+			blinking_led = DK_LED2; 		
+	}
+	
+	dk_set_led_on(blinking_led);
+}
+
+static void stop_blinking_led() {
+
+	k_timer_stop(&blinking_led_timer);
+	dk_set_led_off(blinking_led);
+}
+
+static void activate_blinking_3_sec(struct k_work *item)
+{
+	//ARG_UNUSED(item);
+
+	set_blinking_led();
+	k_sleep(K_SECONDS(5));
+	stop_blinking_led();
+}
+
+
+static void on_blinking_led_timer_expiry(struct k_timer *timer_id)
+{
+	static uint8_t val = 1;
+
+	//ARG_UNUSED(timer_id);
+
+	dk_set_led(blinking_led, val);
+	val = !val;
+}
+
+static void on_blinking_led_timer_stop(struct k_timer *timer_id)
+{
+	//ARG_UNUSED(timer_id);
+
+	dk_set_led_off(blinking_led);
+}
+
+
+
+static void on_button_changed(uint32_t button_state, uint32_t has_changed)
+{
+	uint32_t buttons = button_state & has_changed;
+	
+	if (buttons & DK_BTN1_MSK) {
+		mode_switch = true;
+	}
+	if (buttons & DK_BTN2_MSK) {
+		btn2_pressed = true;
+	}
+	if (buttons & DK_BTN3_MSK) {
+		btn3_pressed = true;
+	}
+	if (buttons & DK_BTN4_MSK) {
+		btn4_pressed = true;
+	}
+
+}
 
 /* CoAP */
 
@@ -41,6 +179,7 @@ const char *serverIpAddr = "fdda:72bc:8975:2:0:0:10.80.2.239";
 void coap_init(void);
 void coap_send_data_response_cb(void *p_context, otMessage *p_message, const otMessageInfo *p_message_info, otError result);
 void coap_send_data_request(char *message);
+
 
 /* SMF */
 
@@ -64,11 +203,7 @@ enum state {
 struct s_object {
 	/* This must be first */
 	struct smf_ctx ctx;
-	
-	/* Events */
-	struct k_event smf_event;
-	int32_t events;
-
+	/* Error Value */
 	int16_t error;
 } s_obj;
 
@@ -76,21 +211,26 @@ struct s_object {
 static void init_run(void *o){
 	printk("INIT\n");
 
+	blinking_led = DK_LED1;
+	k_timer_start(&blinking_led_timer, K_MSEC(500), K_MSEC(500));
+	
 	struct s_object *s = (struct s_object *)o;
 	s->error = NO_ERROR;
+
 
 	/* Init Settings for Sensor Station */
 	station_mode = MEASURE;
 	mode_switch = false;
+	btn2_pressed = false;
+	btn3_pressed = false;
+	btn4_pressed = false;
 
-	calib_mode = CO2;
-	calibration_selected = false;
-	run_frc = false;
-		
 	measure_period = FIVE;
+	calib_mode = CO2;
+
 	run_per_measurement = false;
-
-
+	run_calibration = false;
+	run_frc = false;
 
 	/* Init Sensor Measuring */
 	sensirion_i2c_hal_get();
@@ -104,7 +244,9 @@ static void init_run(void *o){
 	/* Init CoAP */
 	coap_init();
 
+	k_timer_stop(&blinking_led_timer);
 	smf_sleep_sec = 5;
+	new_led_state = true;
 	smf_set_state(SMF_CTX(&s_obj), &states[IDLE]);
 }
 
@@ -133,74 +275,99 @@ static void idle_run(void *o){
 			if(btn2_pressed) {
 				measure_period = FIVE;
 				printk("Period Change to FIVE\n");
+				new_led_state = true;
 				btn2_pressed = false;
 			}
 			if(btn3_pressed) {
 				measure_period = THIRTY;
 				printk("Period Change to THIRTY\n");
+				new_led_state = true;
 				btn3_pressed = false;
 			}
 			if(btn4_pressed) {
 				measure_period = SIXTY;
 				printk("Period Change to SIXTY\n");
+				new_led_state = true;
 				btn4_pressed = false;
+			}
+			if(new_led_state) {
+				dk_set_leds(DK_NO_LEDS_MSK);
+				dk_set_led_on(DK_LED2);
+				set_blinking_led();
+				new_led_state = false;
 			}
 			break;
 
 		case CALIBRATE:
 			if(btn2_pressed) {
-				if(calib_mode == CO2 && calibration_selected) {
+				if(calib_mode == CO2 && run_calibration) {
 					smf_set_state(SMF_CTX(&s_obj), &states[START_CALIB_MEASUREMENT]);
 					smf_sleep_sec = 1;
 					btn2_pressed = false;
+					new_led_state = true;
 					return;
 				}
 				else if(calib_mode == CO2) {
 					printk("-> selected CO2\n");
-					calibration_selected = true;
-				} // Start calibration
+					run_calibration = true;
+					set_select_led();
+				}
 				else {
 					printk("Change Calib to CO2\n");
 					calib_mode = CO2;
-					calibration_selected = false;
+					run_calibration = false;
+					new_led_state = true;
 				}
 				btn2_pressed = false;
 			}
 			if(btn3_pressed) {
-				if(calib_mode == VOC && calibration_selected) {
+				if(calib_mode == VOC && run_calibration) {
 					smf_set_state(SMF_CTX(&s_obj), &states[START_CALIB_MEASUREMENT]);
 					smf_sleep_sec = 1;
 					btn3_pressed = false;
+					new_led_state = true;
 					return;
 				}
 				else if(calib_mode == VOC) {
 					printk("-> selected VOC\n");
-					calibration_selected = true;
-				} // Start calibration
+					run_calibration = true;
+					set_select_led();
+				}
 				else {
 					printk("Change Calib to VOC\n");
 					calib_mode = VOC;
-					calibration_selected = false;
+					run_calibration = false;
+					new_led_state = true;
 				}
 				btn3_pressed = false;
 			}
 			if(btn4_pressed) {
-				if(calib_mode == TEMP && calibration_selected) {
+				if(calib_mode == TEMP && run_calibration) {
 					smf_set_state(SMF_CTX(&s_obj), &states[START_CALIB_MEASUREMENT]);
 					smf_sleep_sec = 1;
 					btn4_pressed = false;
+					new_led_state = true;
 					return;
 				}
 				else if(calib_mode == TEMP) {
 					printk("-> selected TEMP\n");
-					calibration_selected = true;
-				} // Start calibration
+					run_calibration = true;
+					set_select_led();
+				
+				}
 				else {
 					printk("Change Calib to TEMP\n");
 					calib_mode = TEMP;
-					calibration_selected = false;
+					run_calibration = false;
+					new_led_state = true;
 				}
 				btn4_pressed = false;
+			}
+			if(new_led_state) {
+				dk_set_leds(DK_NO_LEDS_MSK);
+				dk_set_led_on(DK_LED3);
+				set_blinking_led();
+				new_led_state = false;
 			}
 			break;
 
@@ -215,16 +382,27 @@ static void idle_run(void *o){
 				}
 				else {
 					run_per_measurement = true;
+					set_select_led(blinking_led);
 				}
 				btn2_pressed = false;
 			}
 			if(btn3_pressed) {
 				// do nothing
+				run_per_measurement = false;
 				btn3_pressed = false;
+				new_led_state = true;
 			}
 			if(btn4_pressed) {
 				// do nothing
+				run_per_measurement = false;
 				btn4_pressed = false;
+				new_led_state = true;
+			}
+			if(new_led_state) {
+				dk_set_leds(DK_NO_LEDS_MSK);
+				dk_set_led_on(DK_LED1);
+				set_blinking_led();
+				new_led_state = false;
 			}
 	}
 	
@@ -235,13 +413,17 @@ static void idle_run(void *o){
 /* State START_MEASUREMENT */
 static void start_measurement_run(void *o){
 	printk("START_MEASUREMENT\n");
-	
+
 	struct s_object *s = (struct s_object *)o;
 	s->error = NO_ERROR;
+
+	dk_set_leds(DK_NO_LEDS_MSK);
+	stop_blinking_led();
+	blinking_led = DK_LED1;
 	
 	/* Start periodic measurement */
 	start_periodic_measurement(&(s->error));
-	
+
 	smf_sleep_sec = 10;
 	smf_set_state(SMF_CTX(&s_obj), &states[READ_MEASUREMENT]);
 }
@@ -252,10 +434,17 @@ static void stop_measurement_run(void *o){
 	
 	struct s_object *s = (struct s_object *)o;
 	s->error = NO_ERROR;
-	
+
+	stop_blinking_led();
+
 	/* Stop periodic measurement */
 	stop_periodic_measurement(&(s->error));
+
+	dk_set_leds(DK_ALL_LEDS_MSK);
+
 	k_msleep(500);
+	
+	new_led_state = true;
 	smf_sleep_sec = NO_SLEEP_TIME_SEC;
 	smf_set_state(SMF_CTX(&s_obj), &states[IDLE]);
 }
@@ -266,6 +455,8 @@ static void read_measurement_run(void *o){
 
 	struct s_object *s = (struct s_object *)o;
 	s->error = NO_ERROR;
+
+	stop_blinking_led();
 
 	read_measurement(&(s->error));
 	print_measurement();
@@ -284,9 +475,10 @@ static void send_data_run(void *o){
 	// Use shared_data for CoAP communication
 	char* my_sensor_data;
 	my_sensor_data = create_coap_message();
-	//my_sensor_data = create_coap_message_with_k_heap_alloc(&my_text_buffer_heap, &(s->error));
 	coap_send_data_request(my_sensor_data);
-	//k_heap_free(&my_text_buffer_heap, my_sensor_data);
+
+	k_work_submit(&blinking_led_3sec_work);
+
 	free(my_sensor_data);
 
 	smf_sleep_sec = SLEEP_TIME_FIVE;
@@ -303,6 +495,8 @@ static void start_calib_measurement_run(void *o){
 	
 	struct s_object *s = (struct s_object *)o;
 	s->error = NO_ERROR;
+
+	set_select_led();
 	switch(calib_mode) {
 		case CO2:
 			/**
@@ -323,6 +517,7 @@ static void start_calib_measurement_run(void *o){
 				}
 			}
 			stop_periodic_measurement(&(s->error));
+			stop_blinking_led();
 			smf_sleep_sec = 1;
 			break;
 		case VOC:
@@ -345,6 +540,7 @@ static void calib_ready_run(void *o){
 	
 	struct s_object *s = (struct s_object *)o;
 	s->error = NO_ERROR;
+	set_blinking_led();
 	switch(calib_mode) {
 		case CO2:
 			// LED shows calib_ready
@@ -356,6 +552,7 @@ static void calib_ready_run(void *o){
 					return;
 				}
 				run_frc = true;
+				set_select_led();
 				break;
 			}
 			break;
@@ -379,6 +576,8 @@ static void frc_run(void *o){
 	
 	struct s_object *s = (struct s_object *)o;
 	s->error = NO_ERROR;
+	stop_blinking_led();
+
 	switch(calib_mode) {
 		case CO2:
 			forced_co2_recalibration(&(s->error));
@@ -391,6 +590,7 @@ static void frc_run(void *o){
 	
 	smf_sleep_sec = 1;
 	run_frc = false;
+	new_led_state = true;
 	smf_set_state(SMF_CTX(&s_obj), &states[IDLE]);
 }
 
@@ -407,94 +607,14 @@ static const struct smf_state states[] = {
 	[FRC] = SMF_CREATE_STATE(frc_entry, frc_run, NULL)
 };
 
-#define OT_CONNECTION_LED DK_LED1
-#define PROVISIONING_LED DK_LED3
-#define LIGHT_LED DK_LED4
-
-static struct k_work provisioning_work;
-
-static struct k_timer led_timer;
-static struct k_timer provisioning_timer;
-
-static void activate_provisioning(struct k_work *item)
-{
-	//ARG_UNUSED(item);
-
-	//ot_coap_activate_provisioning();
-
-	k_timer_start(&led_timer, K_MSEC(100), K_MSEC(100));
-	k_timer_start(&provisioning_timer, K_SECONDS(5), K_NO_WAIT);
-
-	//LOG_INF("Provisioning activated");
-}
-
-static void deactivate_provisionig(void)
-{
-	k_timer_stop(&led_timer);
-	k_timer_stop(&provisioning_timer);
-	/*
-	if (ot_coap_is_provisioning_active()) {
-		ot_coap_deactivate_provisioning();
-		//LOG_INF("Provisioning deactivated");
-	}
-
-	*/
-}
-static void on_provisioning_timer_expiry(struct k_timer *timer_id)
-{
-	//ARG_UNUSED(timer_id);
-
-	deactivate_provisionig();
-}
-
-
-
-static void on_led_timer_expiry(struct k_timer *timer_id)
-{
-	static uint8_t val = 1;
-
-	//ARG_UNUSED(timer_id);
-
-	dk_set_led(PROVISIONING_LED, val);
-	val = !val;
-}
-
-static void on_led_timer_stop(struct k_timer *timer_id)
-{
-	//ARG_UNUSED(timer_id);
-
-	dk_set_led_off(PROVISIONING_LED);
-}
-
-
-
-static void on_button_changed(uint32_t button_state, uint32_t has_changed)
-{
-	uint32_t buttons = button_state & has_changed;
-	
-	if (buttons & DK_BTN1_MSK) {
-		mode_switch = true;
-	}
-	if (buttons & DK_BTN2_MSK) {
-		btn2_pressed = true;
-	}
-	if (buttons & DK_BTN3_MSK) {
-		btn3_pressed = true;
-	}
-	if (buttons & DK_BTN4_MSK) {
-		btn4_pressed = true;
-	}
-
-}
 
 int main(void)
 {
 	int32_t ret;
 
-	k_work_init(&provisioning_work, activate_provisioning);
-
-	k_timer_init(&led_timer, on_led_timer_expiry, on_led_timer_stop);
-	k_timer_init(&provisioning_timer, on_provisioning_timer_expiry, NULL);
+	k_timer_init(&blinking_led_timer, on_blinking_led_timer_expiry, on_blinking_led_timer_stop);
+	
+	k_work_init(&blinking_led_3sec_work, activate_blinking_3_sec);
 
 	ret = dk_leds_init();
 	if (ret) {
@@ -507,9 +627,6 @@ int main(void)
 		//LOG_ERR("Cannot init buttons (error: %d)", ret);
 		goto end;
 	}
-
-	/* Initialize the event */
-    k_event_init(&s_obj.smf_event);
 
 	/* Set init state */
 	smf_set_initial(SMF_CTX(&s_obj), &states[INIT]);
@@ -544,6 +661,7 @@ int main(void)
 					smf_set_state(SMF_CTX(&s_obj), &states[STOP_MEASUREMENT]);
 			};
 			mode_switch = false;
+			new_led_state = true;
 		}
 		k_sleep(K_SECONDS(smf_sleep_sec));
 	}

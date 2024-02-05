@@ -176,27 +176,6 @@ char *create_coap_message()
 	return buf;
 }
 
-char* create_coap_message_with_k_heap_alloc(struct k_heap* heap, int16_t *ret) {
-	char* jsonBuffer = (char*)k_heap_alloc(heap, TEXTBUFFER_SIZE, K_NO_WAIT);
-
-	*ret = snprintk(jsonBuffer, sizeof(jsonBuffer),
-					   "{\"id\":\"%X%X\",\"values\":{\"scd41_co2\":%u,\"scd41_temp\":%d,\"scd41_hum\":%d,\"svm41_hum\":%i,\"svm41_temp\":%i,\"svm41_voc\":%i}}",
-					   NRF_FICR->DEVICEID[0], NRF_FICR->DEVICEID[1],
-					   SCD41_co2, SCD41_temperature, SCD41_humidity,
-					   SVM41_humidity * 10, (SVM41_temperature >> 1) * 10, SVM41_voc_index);
-
-	if (*ret >= 0 && *ret < sizeof(jsonBuffer))
-	{
-		printk("JSON Encoded Data: %s\n", jsonBuffer);
-	}
-	else
-	{
-		printk("JSON Encoding Failed: %d\n", *ret);
-	}
-
-	return jsonBuffer;
-}
-
 void forced_co2_recalibration(int16_t *error) {
 
 	uint16_t target_value = CO2_TARGET_VALUE;
