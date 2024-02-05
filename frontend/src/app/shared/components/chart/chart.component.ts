@@ -111,9 +111,9 @@ export class ChartComponent implements OnInit {
   private convertDataToChartData(src: ValueMeasure[]) {
     if (this.nameChart.toLowerCase().includes('temp') || this.nameChart.toLowerCase().includes('hum')) {
       return src.map((valueMeasure: ValueMeasure) => [Date.parse(valueMeasure.readAt), Math.round(valueMeasure.value / 1000)]);
-    } else if (this.nameChart.toLowerCase().includes('voc')) {
+    } /*else if (this.nameChart.toLowerCase().includes('voc')) {
       return src.map((valueMeasure: ValueMeasure) => [Date.parse(valueMeasure.readAt), Math.round(valueMeasure.value / 10)]);
-    }
+    }*/
     return src.map((valueMeasure: ValueMeasure) => [Date.parse(valueMeasure.readAt), Math.round(valueMeasure.value)]);
   }
 
@@ -137,8 +137,8 @@ export class ChartComponent implements OnInit {
             this.setLimitValue(30, 40, 60, 70);
             this.title = {text: 'Humidity'};
           } else if (this.nameChart.toLowerCase().includes('voc')) {
-            // 50 - 51 - 100
-            this.setLimitValue(0, 0, 50, 100);
+            // 0 - 1000 - 1500
+            this.setLimitValue(0, 0, 1000, 1500);
             this.title = {text: 'VOC'};
           } else if (this.nameChart.toLowerCase().includes('co2')) {
             // 1000 - 1001 - 2000 -
