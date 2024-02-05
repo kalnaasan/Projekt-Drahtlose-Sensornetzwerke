@@ -1,8 +1,10 @@
 <form [formGroup]="formGroup">
   <div class="container overflow-y-scroll pb-3">
-    <div class="row mt-3 shadow rounded-4 bg-white mx-3"
-         *ngIf="formGroup.get('width')?.value > 0 && formGroup.get('height')?.value > 0">
-      <div class="col-12 text-center h3 mt-3">Create Plan</div>
+    <div class="row mt-3 shadow rounded-4 bg-white mx-3">
+      <div class="col-12 text-center h3 mt-3">
+        <span *ngIf="!id">Create Plan</span>
+        <span *ngIf="id">Update Plan</span>
+        </div>
       <div class="col-12 text-center my-3">
         <div id="svg-container-dialog"></div>
       </div>
@@ -13,7 +15,7 @@
         <div class="container-fluid">
           <div class="row mt-2 mb-5">
             <div class="col-12 text-center">
-              <button class="btn btn-danger rounded-pill me-2" [routerLink]="['home']">Cancel</button>
+              <button class="btn btn-danger rounded-pill me-2" [routerLink]="['/plan']">Cancel</button>
               <button class="btn btn-success rounded-pill" (click)="saveShape()"
                       [disabled]="!formGroup.valid|| (formGroup.valid && svg === undefined)">Save
               </button>
@@ -40,7 +42,7 @@
             </div>
             <div class="col-12 col-sm-3 d-flex align-items-center">
               <button class="btn btn-primary rounded-pill float-end" (click)="createShape()"
-                      [disabled]="!formGroup.valid || (formGroup.valid && svg !== undefined)">
+                      >
                 Create
               </button>
             </div>
@@ -107,8 +109,9 @@
                       <mat-error *ngIf="element.controls['room'].hasError('required')">Please choose a room</mat-error>
                     </mat-form-field>
                   </td>
-                  <td>
-                    <button class="btn btn-success rounded-pill" (click)="addElementToSVG(i)">Apply</button>
+                  <td class="d-flex flex-column">
+                    <button class="btn btn-success rounded-pill my-1 d-flex align-items-center justify-content-center" (click)="addElementToSVG(i)"><mat-icon>done</mat-icon></button>
+                    <button class="btn btn-danger rounded-pill my-1 d-flex align-items-center justify-content-center" (click)="deleteElementFromSVG(element)"><mat-icon>delete</mat-icon></button>
                   </td>
                 </tr>
                 </tbody>

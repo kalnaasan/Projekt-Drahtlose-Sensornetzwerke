@@ -1,28 +1,30 @@
-import {Component, OnInit} from '@angular/core';
+import {AfterViewInit, Component, OnInit} from '@angular/core';
 import {FormArray, FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {Shape} from '../../../shared/model/shape';
 import * as d3 from 'd3';
 import {RoomService} from '../../../shared/services/RoomService';
 import {Element} from '../../../shared/model/element';
 import {ShapeService} from '../../../shared/services/shape.service';
-import {Router} from "@angular/router";
+import {ActivatedRoute, Router} from "@angular/router";
 
 @Component({
   selector: 'app-plan-dialog',
   templateUrl: './plan.component.html',
   styleUrls: ['./plan.component.scss']
 })
-export class PlanComponent implements OnInit {
+export class PlanComponent implements AfterViewInit, OnInit {
 
   public formGroup !: FormGroup;
   public shape!: Shape;
   protected svg: any;
   public rooms: any[] = [];
+  protected id!: string;
 
   constructor(private formBuilder: FormBuilder,
               private roomService: RoomService,
               private shapeService: ShapeService,
-              private route: Router) {
+              private route: Router,
+              private activatedRoute: ActivatedRoute) {
     this.formGroup = this.formBuilder.group({
       width: ['', Validators.required],
       height: ['', Validators.required],
@@ -35,6 +37,34 @@ export class PlanComponent implements OnInit {
       next: (res: any) => this.rooms = res.data,
       error: (err: any) => console.log(err)
     });
+    this.activatedRoute.paramMap.subscribe((params: any) => {
+      if (params.params['id']) {
+        this.id = params.params['id'];
+        this.shapeService.getShapeById(this.id).subscribe({
+          next: (res: any) => {
+            this.shape = res.data;
+          },
+          error: (err: any) => console.log(err)
+        });
+      }
+    });
+  }
+
+  ngAfterViewInit() {
+    if (this.id) {
+      const interval = setInterval(() => {
+        const div = document.getElementById('svg-container-dialog');
+        if (this.shape) {
+          if (div) {
+            this.formGroup.get('width')?.setValue(this.shape.width);
+            this.formGroup.get('height')?.setValue(this.shape.height);
+            this.createShape();
+            this.addShapeToFromGroup();
+            clearInterval(interval)
+          }
+        }
+      }, 1000)
+    }
   }
 
   createShape() {
@@ -111,13 +141,15 @@ export class PlanComponent implements OnInit {
           end: [item.end, Validators.required]
         });
         this.elements.push(elementFrom);
+        this.addElementToSVG(this.elements.length - 1)
       } else if (item.type.toLowerCase() === 'sensor') {
         const elementFrom = this.formBuilder.group({
           type: [item.type, Validators.required],
           start: [item.start, Validators.required],
-          room: [{}, Validators.required]
+          room: [item.room, Validators.required]
         });
         this.elements.push(elementFrom);
+        this.addElementToSVG(this.elements.length - 1);
       }
     }
   }
@@ -132,6 +164,7 @@ export class PlanComponent implements OnInit {
       createdAt: new Date(),
       updatedAt: new Date()
     };
+
     for (const element of this.elementControls) {
       let item: Element = {
         id: '',
@@ -151,15 +184,64 @@ export class PlanComponent implements OnInit {
       }
       newShape.elements.push(item);
     }
-    console.log(newShape);
 
-    this.shapeService.createShape(newShape).subscribe({
-      next: (res: any) => {
-        console.log(res);
-        this.route.navigateByUrl('/grundriss').then(() => {
-        });
-      },
-      error: (err: any) => console.log(err)
-    })
+    if (this.id) {
+      newShape.id = this.id;
+      this.shapeService.updateShape(newShape).subscribe({
+        next: (res: any) => {
+          this.route.navigateByUrl('/plan').then(() => {
+          });
+        },
+        error: (err: any) => console.log(err)
+      })
+    } else {
+      this.shapeService.createShape(newShape).subscribe({
+        next: (res: any) => {
+          this.route.navigateByUrl('/plan').then(() => {
+          });
+        },
+        error: (err: any) => console.log(err)
+      });
+    }
+  }
+
+  deleteElementFromSVG(element: any) {
+
+    let children = this.svg.selectAll('line').nodes() || [];
+    for (let node of this.svg.selectAll('circle').nodes()) {
+      children.push(node);
+    }
+
+    for (let node of children as HTMLElement[]) {
+      const startX: number = parseInt(element.controls['start'].value.split(':')[0], 10);
+      const startY: number = this.shape.height - parseInt(element.controls['start'].value.split(':')[1], 10);
+      if (element.controls['type'].value.toLowerCase() === 'sensor' && node.id.toLowerCase().includes('circle')) {
+        if (parseInt(node.getAttribute('cx') || '0', 10) === startX &&
+          parseInt(node.getAttribute('cy') || '0', 10) === startY) {
+          node.remove();
+          this.removeElementFromFormGroup(element);
+        }
+      } else if (element.controls['type'].value.toLowerCase() === 'line' && node.id.toLowerCase().includes('line')) {
+        const endX: number = parseInt(element.controls['end'].value.split(':')[0], 10);
+        const endY: number = this.shape.height - parseInt(element.controls['end'].value.split(':')[1], 10);
+        if (parseInt(node.getAttribute('x1') || '0', 10) === startX &&
+          parseInt(node.getAttribute('y1') || '0', 10) === startY &&
+          parseInt(node.getAttribute('x2') || '0', 10) === endX &&
+          parseInt(node.getAttribute('y2') || '0', 10) === endY) {
+          node.remove();
+          this.removeElementFromFormGroup(element);
+        }
+
+      }
+    }
+  }
+
+  private removeElementFromFormGroup(element: any){
+    for (let i = 0; i < this.elementControls.length; i++){
+      if (this.elementControls[i] === element){
+        console.log('found');
+        this.elements.removeAt(i);
+      }
+    }
   }
 }
