@@ -7,10 +7,13 @@
 
 #include "sensor_functionality.h"
 
+#define SLEEP_TIME_ONE 1
 #define SLEEP_TIME_FIVE 5
+#define SLEEP_TIME_TEN 10
 #define SLEEP_TIME_THIRTY 30
 #define SLEEP_TIME_SIXTY 60
-#define NO_SLEEP_TIME_SEC 0
+#define SLEEP_TIME_THREE_MIN 180
+#define NO_SLEEP_TIME 0
 
 #define NO_ERROR 0
 
@@ -172,6 +175,22 @@ static void on_button_changed(uint32_t button_state, uint32_t has_changed)
 
 }
 
+/**
+ * Sleep Interrupt Button Handler for usage of k_sleep()
+ * Returns true if interrupted, false otherwise.
+*/
+static bool sleep_interruptable(uint8_t sec) {
+
+	for(uint8_t i = 0; i < sec; i++) {
+		k_sleep(K_SECONDS(1));
+		if(btn4_pressed || mode_switch) {
+			btn4_pressed = false;
+			mode_switch = false;
+			return true;
+		}
+	}
+	return false;
+}
 /* CoAP */
 
 const char *serverIpAddr = "fdda:72bc:8975:2:0:0:10.80.2.239";
@@ -183,7 +202,7 @@ void coap_send_data_request(char *message);
 
 /* SMF */
 
-int32_t smf_sleep_sec = NO_SLEEP_TIME_SEC;
+int32_t smf_sleep_sec = NO_SLEEP_TIME;
 
 /* Forward declaration of state table */
 static const struct smf_state states[];
@@ -245,7 +264,7 @@ static void init_run(void *o){
 	coap_init();
 
 	k_timer_stop(&blinking_led_timer);
-	smf_sleep_sec = 5;
+	smf_sleep_sec = SLEEP_TIME_FIVE;
 	new_led_state = true;
 	smf_set_state(SMF_CTX(&s_obj), &states[IDLE]);
 }
@@ -302,7 +321,7 @@ static void idle_run(void *o){
 			if(btn2_pressed) {
 				if(calib_mode == CO2 && run_calibration) {
 					smf_set_state(SMF_CTX(&s_obj), &states[START_CALIB_MEASUREMENT]);
-					smf_sleep_sec = 1;
+					smf_sleep_sec = SLEEP_TIME_ONE;
 					btn2_pressed = false;
 					new_led_state = true;
 					return;
@@ -323,7 +342,7 @@ static void idle_run(void *o){
 			if(btn3_pressed) {
 				if(calib_mode == VOC && run_calibration) {
 					smf_set_state(SMF_CTX(&s_obj), &states[START_CALIB_MEASUREMENT]);
-					smf_sleep_sec = 1;
+					smf_sleep_sec = SLEEP_TIME_ONE;
 					btn3_pressed = false;
 					new_led_state = true;
 					return;
@@ -344,7 +363,7 @@ static void idle_run(void *o){
 			if(btn4_pressed) {
 				if(calib_mode == TEMP && run_calibration) {
 					smf_set_state(SMF_CTX(&s_obj), &states[START_CALIB_MEASUREMENT]);
-					smf_sleep_sec = 1;
+					smf_sleep_sec = SLEEP_TIME_ONE;
 					btn4_pressed = false;
 					new_led_state = true;
 					return;
@@ -376,7 +395,7 @@ static void idle_run(void *o){
 			if(btn2_pressed) {
 				if(run_per_measurement) {
 					smf_set_state(SMF_CTX(&s_obj), &states[START_MEASUREMENT]);
-					smf_sleep_sec = 1;
+					smf_sleep_sec = SLEEP_TIME_ONE;
 					btn2_pressed = false;
 					return;
 				}
@@ -407,7 +426,7 @@ static void idle_run(void *o){
 			break;
 	}
 	
-	smf_sleep_sec = 1;
+	smf_sleep_sec = SLEEP_TIME_ONE;
 	smf_set_state(SMF_CTX(&s_obj), &states[IDLE]);
 }
 
@@ -425,7 +444,13 @@ static void start_measurement_run(void *o){
 	/* Start periodic measurement */
 	start_periodic_measurement(&(s->error));
 
-	smf_sleep_sec = 10;
+	if(sleep_interruptable(SLEEP_TIME_TEN)) {
+		smf_set_state(SMF_CTX(&s_obj), &states[STOP_MEASUREMENT]);
+		smf_sleep_sec = NO_SLEEP_TIME;
+		return;
+	}
+
+	smf_sleep_sec = NO_SLEEP_TIME;
 	smf_set_state(SMF_CTX(&s_obj), &states[READ_MEASUREMENT]);
 }
 
@@ -442,15 +467,13 @@ static void stop_measurement_run(void *o){
 	stop_periodic_measurement(&(s->error));
 
 	dk_set_leds(DK_ALL_LEDS_MSK);
-
-	k_msleep(500);
 	
 	run_calibration = false;
 	run_per_measurement = false;
 	run_frc = false;
 
 	new_led_state = true;
-	smf_sleep_sec = NO_SLEEP_TIME_SEC;
+	smf_sleep_sec = NO_SLEEP_TIME;
 	smf_set_state(SMF_CTX(&s_obj), &states[IDLE]);
 }
 
@@ -466,7 +489,7 @@ static void read_measurement_run(void *o){
 	read_measurement(&(s->error));
 	print_measurement();
 
-	smf_sleep_sec = 0;
+	smf_sleep_sec = NO_SLEEP_TIME;
 	smf_set_state(SMF_CTX(&s_obj), &states[SEND_DATA]);
 }
 
@@ -484,10 +507,29 @@ static void send_data_run(void *o){
 	free(my_sensor_data);
 
 	switch(measure_period) {
-		case FIVE: smf_sleep_sec = SLEEP_TIME_FIVE; break;
-		case THIRTY: smf_sleep_sec = SLEEP_TIME_THIRTY; break;
-		case SIXTY: smf_sleep_sec = SLEEP_TIME_SIXTY; break;
+		case FIVE: 
+			if(sleep_interruptable(SLEEP_TIME_FIVE)) {
+				smf_set_state(SMF_CTX(&s_obj), &states[STOP_MEASUREMENT]);
+				smf_sleep_sec = NO_SLEEP_TIME;
+				return;
+			}
+			break;
+		case THIRTY:
+			if(sleep_interruptable(SLEEP_TIME_THIRTY)) {
+				smf_set_state(SMF_CTX(&s_obj), &states[STOP_MEASUREMENT]);
+				smf_sleep_sec = NO_SLEEP_TIME;
+				return;
+			}
+			break;
+		case SIXTY:
+			if(sleep_interruptable(SLEEP_TIME_SIXTY)) {
+				smf_set_state(SMF_CTX(&s_obj), &states[STOP_MEASUREMENT]);
+				smf_sleep_sec = NO_SLEEP_TIME;
+				return;
+			}
+			break;
 	}
+	smf_sleep_sec = NO_SLEEP_TIME;
 	smf_set_state(SMF_CTX(&s_obj), &states[READ_MEASUREMENT]);
 }
 
@@ -505,26 +547,18 @@ static void start_calib_measurement_run(void *o){
 	set_select_led();
 	switch(calib_mode) {
 		case CO2:
-			/**
-			 * Measure for 3 Minutes CO2
-			 * Check every 5 seconds if stop Button has been pressed
-			 * 36 * 5 sec = 180 sec = 3 Min
-			*/
+			/* easure for 3 Minutes CO2	*/
 			start_periodic_measurement(&(s->error));
 			if(s->error) return;
 
-			for(uint16_t i = 0; i < 36; i++) {
-				k_sleep(K_SECONDS(SLEEP_TIME_FIVE));	// 5 sec
-				if(btn2_pressed) {					
-					smf_set_state(SMF_CTX(&s_obj), &states[STOP_MEASUREMENT]);
-					smf_sleep_sec = 1;
-					btn2_pressed = false;
-					return;
-				}
+			if(sleep_interruptable(SLEEP_TIME_THREE_MIN)) {
+				smf_set_state(SMF_CTX(&s_obj), &states[STOP_MEASUREMENT]);
+				smf_sleep_sec = NO_SLEEP_TIME;
+				return;
 			}
 			stop_periodic_measurement(&(s->error));
 			stop_blinking_led();
-			smf_sleep_sec = 1;
+			smf_sleep_sec = SLEEP_TIME_ONE;
 			break;
 		case VOC:
 			break;
@@ -553,7 +587,7 @@ static void calib_ready_run(void *o){
 			if(btn2_pressed) {
 				if(run_frc) {
 					smf_set_state(SMF_CTX(&s_obj), &states[FRC]);
-					smf_sleep_sec = NO_SLEEP_TIME_SEC;
+					smf_sleep_sec = NO_SLEEP_TIME;
 					btn2_pressed = false;
 					return;
 				}
@@ -568,7 +602,7 @@ static void calib_ready_run(void *o){
 		default:
 	}
 	
-	smf_sleep_sec = NO_SLEEP_TIME_SEC;
+	smf_sleep_sec = NO_SLEEP_TIME;
 	smf_set_state(SMF_CTX(&s_obj), &states[CALIB_READY]);
 }
 
@@ -594,7 +628,7 @@ static void frc_run(void *o){
 		default:
 	}
 	
-	smf_sleep_sec = 1;
+	smf_sleep_sec = SLEEP_TIME_ONE;
 	run_frc = false;
 	new_led_state = true;
 	smf_set_state(SMF_CTX(&s_obj), &states[IDLE]);
@@ -642,24 +676,25 @@ int main(void)
 		if(ret) {
 			printk("SMF Run State Error: %d\n", ret);
 			smf_set_initial(SMF_CTX(&s_obj), &states[INIT]);
-			smf_sleep_sec = 10;
+			smf_sleep_sec = SLEEP_TIME_TEN;
 			continue;
 		}
 		if(btn4_pressed && (run_calibration || run_per_measurement|| run_frc)) {
 			smf_set_state(SMF_CTX(&s_obj), &states[STOP_MEASUREMENT]);
-			smf_sleep_sec = NO_SLEEP_TIME_SEC;
+			smf_sleep_sec = NO_SLEEP_TIME;
+			btn4_pressed = false;
 		}
 		if(mode_switch) {
 			switch(station_mode) {
 				case CONFIG_PERIOD: 
 					station_mode = CALIBRATE;
-					smf_sleep_sec = NO_SLEEP_TIME_SEC;
+					smf_sleep_sec = NO_SLEEP_TIME;
 					smf_set_state(SMF_CTX(&s_obj), &states[IDLE]);
 					break;
 
 				case CALIBRATE: 	
 					station_mode = MEASURE;
-					smf_sleep_sec = NO_SLEEP_TIME_SEC;
+					smf_sleep_sec = NO_SLEEP_TIME;
 					(run_calibration || run_frc) ? smf_set_state(SMF_CTX(&s_obj), &states[STOP_MEASUREMENT])
 									: smf_set_state(SMF_CTX(&s_obj), &states[IDLE]);
 					break;
@@ -667,7 +702,7 @@ int main(void)
 				case MEASURE:
 				default:	 		
 					station_mode = CONFIG_PERIOD;
-					smf_sleep_sec = NO_SLEEP_TIME_SEC;
+					smf_sleep_sec = NO_SLEEP_TIME;
 					run_per_measurement ? smf_set_state(SMF_CTX(&s_obj), &states[STOP_MEASUREMENT])
 										: smf_set_state(SMF_CTX(&s_obj), &states[IDLE]);
 					new_led_state = true;

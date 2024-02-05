@@ -40,8 +40,8 @@ void start_periodic_measurement(int16_t *error)
 	if (*error)
 	{
 		printk("Error executing scd41x_[low_power_]start_periodic_measurement(): %i\n", *error);
-		return;
 	}
+		return;
 	
 	// SVM41
 	*error = svm41_start_measurement();
