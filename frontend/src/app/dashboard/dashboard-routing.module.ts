@@ -14,6 +14,7 @@ const routes: Routes = [
   {path: 'rooms/:id', component: RoomComponent, pathMatch: 'full'},
   {path: 'plan', component: PlansComponent, pathMatch: 'full'},
   {path: 'plan/create', component: PlanComponent, pathMatch: 'full'},
+  {path: 'plan/update/:id', component: PlanComponent, pathMatch: 'full'},
   {path: '', redirectTo: 'home', pathMatch: 'full'},
 ];
 
