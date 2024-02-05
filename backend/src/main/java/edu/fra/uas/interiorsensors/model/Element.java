@@ -49,7 +49,7 @@ public class Element {
     @JoinColumn(name = "shape_id")
     private Shape shape;
 
-    @OneToOne(cascade = CascadeType.MERGE, fetch = FetchType.LAZY)
+    @OneToOne(cascade = CascadeType.MERGE, fetch = FetchType.EAGER)
     @JoinColumn(name = "room_id", referencedColumnName = "id")
     private Room room;
 

@@ -48,12 +48,12 @@ public class Room {
     private List<Sensor> sensors = new ArrayList<>();
 
     @JsonIgnore
-    @ManyToOne(cascade = CascadeType.MERGE, fetch = FetchType.LAZY)
+    @ManyToOne(cascade = CascadeType.MERGE, fetch = FetchType.EAGER)
     @JoinColumn(name = "shape_id")
     private Shape shape;
 
     @JsonIgnore
-    @OneToOne(fetch = FetchType.LAZY, mappedBy = "room")
+    @OneToOne(fetch = FetchType.EAGER, mappedBy = "room")
     private Element element;
 
     @CreationTimestamp
