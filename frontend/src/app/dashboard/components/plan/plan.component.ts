@@ -190,18 +190,12 @@ export class PlanComponent implements AfterViewInit, OnInit {
     if (this.id) {
       newShape.id = this.id;
       this.shapeService.updateShape(newShape).subscribe({
-        next: (res: any) => {
-          this.route.navigateByUrl('/plan').then(() => {
-          });
-        },
+        next: () => this.route.navigateByUrl('/plan').then(() => {}),
         error: (err: any) => console.log(err)
       })
     } else {
       this.shapeService.createShape(newShape).subscribe({
-        next: (res: any) => {
-          this.route.navigateByUrl('/plan').then(() => {
-          });
-        },
+        next: () => this.route.navigateByUrl('/plan').then(() => {}),
         error: (err: any) => console.log(err)
       });
     }
