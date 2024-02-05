@@ -96,16 +96,40 @@ public class ShapeController {
         log.debug("Updating Shape by id: {}", id);
         Optional<Shape> optionalShape = this.shapeRepository.findById(id);
         if (optionalShape.isPresent() && optionalShape.get().getId().equals(shape.getId())) {
-            Shape roomUpdated = this.shapeRepository.save(shape);
+            // remove the shape fro rooms
+            for (Room room : optionalShape.get().getRooms()) {
+                room.setShape(null);
+                this.roomRepository.save(room);
+            }
+            // remove the shape from the elements
+            this.elementRepository.deleteAll(optionalShape.get().getElements());
+
+            // copy the rooms of the shape
+            List<Room> rooms = shape.getRooms().stream().toList();
+            shape.getRooms().clear();
+            // copy the elements of the shape
             List<Element> elements = shape.getElements().stream().toList();
-            roomUpdated.getElements().clear();
+            shape.getElements().clear();
+            // update the shape
+            Shape shapeCreated = this.shapeRepository.save(shape);
+            // update the rooms
+            for (Room room : rooms) {
+                room.setShape(shapeCreated);
+                this.roomRepository.save(room);
+            }
+            // update the elements
             for (Element element : elements) {
-                element.setShape(roomUpdated);
+                Room room = null;
+                if (element.getRoom() != null){
+                    room = this.roomRepository.findById(element.getRoom().getId()).orElseGet(null);
+                }
+                element.setRoom(room);
+                element.setShape(shapeCreated);
                 this.elementRepository.save(element);
             }
-            return this.message("Updating User by id", roomUpdated, HttpStatus.ACCEPTED);
+            return this.message("Updating shape", null, HttpStatus.ACCEPTED);
         }
-        return this.message("User not found", null, HttpStatus.NOT_FOUND);
+        return this.message("Shape not found", null, HttpStatus.NOT_FOUND);
     }
 
     @DeleteMapping("/{id}")
