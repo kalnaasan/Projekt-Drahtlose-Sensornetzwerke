@@ -645,20 +645,25 @@ int main(void)
 					station_mode = CALIBRATE;
 					smf_sleep_sec = NO_SLEEP_TIME_SEC;
 					smf_set_state(SMF_CTX(&s_obj), &states[IDLE]);
+					new_led_state = true;
 					break;
 
 				case CALIBRATE: 	
 					station_mode = MEASURE;
 					run_frc = false;
 					smf_sleep_sec = NO_SLEEP_TIME_SEC;
-					smf_set_state(SMF_CTX(&s_obj), &states[STOP_MEASUREMENT]);
+					(run_calibration || run_frc) ? (SMF_CTX(&s_obj), &states[STOP_MEASUREMENT])
+									: (SMF_CTX(&s_obj), &states[IDLE]);
+					new_led_state = true;
 					break;
 
 				case MEASURE:
 				default:	 		
 					station_mode = CONFIG_PERIOD;
 					smf_sleep_sec = NO_SLEEP_TIME_SEC;
-					smf_set_state(SMF_CTX(&s_obj), &states[STOP_MEASUREMENT]);
+					run_per_measurement ? (SMF_CTX(&s_obj), &states[STOP_MEASUREMENT])
+										: (SMF_CTX(&s_obj), &states[IDLE]);
+					new_led_state = true;
 			};
 			mode_switch = false;
 			new_led_state = true;
