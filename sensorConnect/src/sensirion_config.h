@@ -13,7 +13,7 @@
  * If your platform does not provide the library stdlib.h you have to remove the
  * include and define NULL yourself (see below).
  */
-//#include <stdlib.h>
+#include <stdlib.h>
 
 /**
  * #ifndef NULL

@@ -6,10 +6,6 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 project(sensorConnect)
 
-target_sources(app PRIVATE src/main.c
-                    src/scd4x_i2c.c
-                    src/svm41_i2c.c
-                    src/sensirion_i2c.c
-                    src/sensirion_i2c_hal.c
-                    src/sensirion_common.c
-                    src/sensor_functionality.c)
+FILE(GLOB app_sources src/*c)
+# APP START
+target_sources(app PRIVATE ${app_sources})

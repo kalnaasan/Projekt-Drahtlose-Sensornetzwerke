@@ -1,8 +1,8 @@
+#include <dk_buttons_and_leds.h>
 #include <zephyr/smf.h>
 #include <zephyr/net/openthread.h>
 #include <openthread/thread.h>
 #include <openthread/coap.h>
-#include <stdio.h>
 #include <zephyr/drivers/gpio.h>
 
 #include "sensor_functionality.h"
@@ -12,17 +12,10 @@
 #define SLEEP_TIME_SIXTY 60
 #define NO_SLEEP_TIME_SEC 0
 
-
-
 #define NO_ERROR 0
 
-#define BUTTON0_NODE DT_NODELABEL(button0) //DT_N_S_buttons_S_button_0
-#define BUTTON1_NODE DT_NODELABEL(button1) //DT_N_S_buttons_S_button_1
-#define BUTTON2_NODE DT_NODELABEL(button2) //DT_N_S_buttons_S_button_2
-#define BUTTON3_NODE DT_NODELABEL(button3) //DT_N_S_buttons_S_button_3
-
 /* Heap Allocation for JSON String (CoAP Message)*/
-K_HEAP_DEFINE(text_buffer_heap, 512);
+K_HEAP_DEFINE(my_text_buffer_heap, 512);
 
 /* Modes for Sensor Station */
 static enum sensor_station_mode { 
@@ -32,34 +25,14 @@ static enum sensor_station_mode {
 } station_mode;
 
 static bool mode_switch;
+
+static bool btn2_pressed;
+static bool btn3_pressed;
+static bool btn4_pressed;
+
 static bool calibration_selected;
 static bool run_per_measurement;
 static bool run_frc;
-/* List of events */
-#define EVENT_BTN1_PRESS BIT(0)
-#define EVENT_BTN2_PRESS BIT(1)
-#define EVENT_BTN3_PRESS BIT(2)
-
-/* Buttons*/
-static const struct gpio_dt_spec button0_spec = GPIO_DT_SPEC_GET(BUTTON0_NODE, gpios);
-static struct gpio_callback button0_cb;
-
-
-
-static const struct gpio_dt_spec button1_spec = GPIO_DT_SPEC_GET(BUTTON1_NODE, gpios);
-static struct gpio_callback button1_cb;
-
-
-
-static const struct gpio_dt_spec button2_spec = GPIO_DT_SPEC_GET(BUTTON2_NODE, gpios);
-static struct gpio_callback button2_cb;
-
-
-
-static const struct gpio_dt_spec button3_spec = GPIO_DT_SPEC_GET(BUTTON3_NODE, gpios);
-static struct gpio_callback button3_cb;
-
-
 
 /* CoAP */
 
@@ -135,9 +108,21 @@ static void init_run(void *o){
 	smf_set_state(SMF_CTX(&s_obj), &states[IDLE]);
 }
 
+const char* station_mode_to_string(enum sensor_station_mode s_mode) {
+    switch (s_mode) {
+        case MEASURE:
+            return "MEASURE";
+        case CONFIG_PERIOD:
+            return "CONFIG_PERIOD";
+        case CALIBRATE:
+            return "CALIBRATE";
+        default:
+            return "Unknown";
+    }
+}
 /* State IDLE */
 static void idle_run(void *o){
-	printk("IDLE\n");
+	printk("IDLE\tMode: %s\n", station_mode_to_string(station_mode));
 	
 	struct s_object *s = (struct s_object *)o;
 	s->error = NO_ERROR;
@@ -145,73 +130,101 @@ static void idle_run(void *o){
 	/* Change states on Mode-Switch Button Press Event */
 	switch(station_mode) {
 		case CONFIG_PERIOD:
-			if(s->events & EVENT_BTN1_PRESS) measure_period = FIVE;
-			if(s->events & EVENT_BTN2_PRESS) measure_period = THIRTY;
-			if(s->events & EVENT_BTN3_PRESS) measure_period = SIXTY;
+			if(btn2_pressed) {
+				measure_period = FIVE;
+				printk("Period Change to FIVE\n");
+				btn2_pressed = false;
+			}
+			if(btn3_pressed) {
+				measure_period = THIRTY;
+				printk("Period Change to THIRTY\n");
+				btn3_pressed = false;
+			}
+			if(btn4_pressed) {
+				measure_period = SIXTY;
+				printk("Period Change to SIXTY\n");
+				btn4_pressed = false;
+			}
 			break;
 
 		case CALIBRATE:
-			if(s->events & EVENT_BTN1_PRESS) {
+			if(btn2_pressed) {
 				if(calib_mode == CO2 && calibration_selected) {
-					smf_set_state(SMF_CTX(&s_obj), &states[START_CALIB_MEASUREMENT]); //CHANGE IT!!!!!!!!!!!!!!!!!!!!
+					smf_set_state(SMF_CTX(&s_obj), &states[START_CALIB_MEASUREMENT]);
 					smf_sleep_sec = 1;
+					btn2_pressed = false;
 					return;
 				}
 				else if(calib_mode == CO2) {
+					printk("-> selected CO2\n");
 					calibration_selected = true;
 				} // Start calibration
 				else {
+					printk("Change Calib to CO2\n");
 					calib_mode = CO2;
 					calibration_selected = false;
 				}
+				btn2_pressed = false;
 			}
-			if(s->events & EVENT_BTN2_PRESS) {
+			if(btn3_pressed) {
 				if(calib_mode == VOC && calibration_selected) {
-					smf_set_state(SMF_CTX(&s_obj), &states[START_CALIB_MEASUREMENT]); //CHANGE IT!!!!!!!!!!!!!!!!!!!!
+					smf_set_state(SMF_CTX(&s_obj), &states[START_CALIB_MEASUREMENT]);
 					smf_sleep_sec = 1;
+					btn3_pressed = false;
 					return;
 				}
 				else if(calib_mode == VOC) {
+					printk("-> selected VOC\n");
 					calibration_selected = true;
 				} // Start calibration
 				else {
+					printk("Change Calib to VOC\n");
 					calib_mode = VOC;
 					calibration_selected = false;
 				}
+				btn3_pressed = false;
 			}
-			if(s->events & EVENT_BTN3_PRESS) {
+			if(btn4_pressed) {
 				if(calib_mode == TEMP && calibration_selected) {
-					smf_set_state(SMF_CTX(&s_obj), &states[START_CALIB_MEASUREMENT]); //CHANGE IT!!!!!!!!!!!!!!!!!!!!
+					smf_set_state(SMF_CTX(&s_obj), &states[START_CALIB_MEASUREMENT]);
 					smf_sleep_sec = 1;
+					btn4_pressed = false;
 					return;
 				}
 				else if(calib_mode == TEMP) {
+					printk("-> selected TEMP\n");
 					calibration_selected = true;
 				} // Start calibration
 				else {
+					printk("Change Calib to TEMP\n");
 					calib_mode = TEMP;
 					calibration_selected = false;
 				}
+				btn4_pressed = false;
 			}
 			break;
 
 		case MEASURE:
 		default:	 		
-			if(s->events & EVENT_BTN1_PRESS) {
+			if(btn2_pressed) {
 				if(run_per_measurement) {
 					smf_set_state(SMF_CTX(&s_obj), &states[START_MEASUREMENT]);
 					smf_sleep_sec = 1;
+					btn2_pressed = false;
 					return;
 				}
 				else {
 					run_per_measurement = true;
 				}
+				btn2_pressed = false;
 			}
-			if(s->events & EVENT_BTN2_PRESS) {
+			if(btn3_pressed) {
 				// do nothing
+				btn3_pressed = false;
 			}
-			if(s->events & EVENT_BTN3_PRESS) {
+			if(btn4_pressed) {
 				// do nothing
+				btn4_pressed = false;
 			}
 	}
 	
@@ -270,9 +283,11 @@ static void send_data_run(void *o){
 	
 	// Use shared_data for CoAP communication
 	char* my_sensor_data;
-	my_sensor_data = create_coap_message(&text_buffer_heap, &(s->error));
+	my_sensor_data = create_coap_message();
+	//my_sensor_data = create_coap_message_with_k_heap_alloc(&my_text_buffer_heap, &(s->error));
 	coap_send_data_request(my_sensor_data);
-	k_heap_free(&text_buffer_heap, my_sensor_data);
+	//k_heap_free(&my_text_buffer_heap, my_sensor_data);
+	free(my_sensor_data);
 
 	smf_sleep_sec = SLEEP_TIME_FIVE;
 	smf_set_state(SMF_CTX(&s_obj), &states[READ_MEASUREMENT]);
@@ -298,11 +313,12 @@ static void start_calib_measurement_run(void *o){
 			start_periodic_measurement(&(s->error));
 			if(s->error) return;
 
-			for(u_int16_t i = 0; i < 36; i++) {
+			for(uint16_t i = 0; i < 36; i++) {
 				k_sleep(K_SECONDS(SLEEP_TIME_FIVE));	// 5 sec
-				if(s->events & EVENT_BTN2_PRESS) {					
+				if(btn2_pressed) {					
 					smf_set_state(SMF_CTX(&s_obj), &states[STOP_MEASUREMENT]);
 					smf_sleep_sec = 1;
+					btn2_pressed = false;
 					return;
 				}
 			}
@@ -332,10 +348,11 @@ static void calib_ready_run(void *o){
 	switch(calib_mode) {
 		case CO2:
 			// LED shows calib_ready
-			if(s->events & EVENT_BTN2_PRESS) {
+			if(btn2_pressed) {
 				if(run_frc) {
 					smf_set_state(SMF_CTX(&s_obj), &states[FRC]);
 					smf_sleep_sec = NO_SLEEP_TIME_SEC;
+					btn2_pressed = false;
 					return;
 				}
 				run_frc = true;
@@ -390,48 +407,106 @@ static const struct smf_state states[] = {
 	[FRC] = SMF_CREATE_STATE(frc_entry, frc_run, NULL)
 };
 
-/* Button Handler*/
-void button0_callback(const struct device *gpiob, struct gpio_callback *cb,
-                                     gpio_port_pins_t pins){
-	mode_switch = true;
-}
-void button1_callback(const struct device *gpiob, struct gpio_callback *cb,
-                                     gpio_port_pins_t pins){
-    /* Generate Button Press Event */
-    k_event_post(&s_obj.smf_event, EVENT_BTN1_PRESS);
-    
-}
-void button2_callback(const struct device *gpiob, struct gpio_callback *cb,
-                                     gpio_port_pins_t pins){
-    /* Generate Button Press Event */
-    k_event_post(&s_obj.smf_event, EVENT_BTN2_PRESS);
-    
-}
-void button3_callback(const struct device *gpiob, struct gpio_callback *cb,
-                                     gpio_port_pins_t pins){
-    /* Generate Button Press Event */
-    k_event_post(&s_obj.smf_event, EVENT_BTN3_PRESS);
-    
+#define OT_CONNECTION_LED DK_LED1
+#define PROVISIONING_LED DK_LED3
+#define LIGHT_LED DK_LED4
+
+static struct k_work provisioning_work;
+
+static struct k_timer led_timer;
+static struct k_timer provisioning_timer;
+
+static void activate_provisioning(struct k_work *item)
+{
+	//ARG_UNUSED(item);
+
+	//ot_coap_activate_provisioning();
+
+	k_timer_start(&led_timer, K_MSEC(100), K_MSEC(100));
+	k_timer_start(&provisioning_timer, K_SECONDS(5), K_NO_WAIT);
+
+	//LOG_INF("Provisioning activated");
 }
 
-void main(void)
+static void deactivate_provisionig(void)
+{
+	k_timer_stop(&led_timer);
+	k_timer_stop(&provisioning_timer);
+	/*
+	if (ot_coap_is_provisioning_active()) {
+		ot_coap_deactivate_provisioning();
+		//LOG_INF("Provisioning deactivated");
+	}
+
+	*/
+}
+static void on_provisioning_timer_expiry(struct k_timer *timer_id)
+{
+	//ARG_UNUSED(timer_id);
+
+	deactivate_provisionig();
+}
+
+
+
+static void on_led_timer_expiry(struct k_timer *timer_id)
+{
+	static uint8_t val = 1;
+
+	//ARG_UNUSED(timer_id);
+
+	dk_set_led(PROVISIONING_LED, val);
+	val = !val;
+}
+
+static void on_led_timer_stop(struct k_timer *timer_id)
+{
+	//ARG_UNUSED(timer_id);
+
+	dk_set_led_off(PROVISIONING_LED);
+}
+
+
+
+static void on_button_changed(uint32_t button_state, uint32_t has_changed)
+{
+	uint32_t buttons = button_state & has_changed;
+	
+	if (buttons & DK_BTN1_MSK) {
+		mode_switch = true;
+	}
+	if (buttons & DK_BTN2_MSK) {
+		btn2_pressed = true;
+	}
+	if (buttons & DK_BTN3_MSK) {
+		btn3_pressed = true;
+	}
+	if (buttons & DK_BTN4_MSK) {
+		btn4_pressed = true;
+	}
+
+}
+
+int main(void)
 {
 	int32_t ret;
 
-	if (!gpio_is_ready_dt(&button0_spec)) {
-		printk("Error: button device %s is not ready\n",
-				button0_spec.port->name);
-		return;
+	k_work_init(&provisioning_work, activate_provisioning);
+
+	k_timer_init(&led_timer, on_led_timer_expiry, on_led_timer_stop);
+	k_timer_init(&provisioning_timer, on_provisioning_timer_expiry, NULL);
+
+	ret = dk_leds_init();
+	if (ret) {
+		//LOG_ERR("Could not initialize leds, err code: %d", ret);
+		goto end;
 	}
 
-	//init button(s)
-	gpio_pin_configure_dt(&button0_spec, GPIO_INPUT);
-
-    gpio_pin_interrupt_configure_dt(&button0_spec, GPIO_INT_EDGE_TO_ACTIVE);
-    gpio_init_callback(&button0_cb, button0_callback, BIT(button0_spec.pin) );
-    gpio_add_callback(button0_spec.port, &button0_cb);
-
-	
+	ret = dk_buttons_init(on_button_changed);
+	if (ret) {
+		//LOG_ERR("Cannot init buttons (error: %d)", ret);
+		goto end;
+	}
 
 	/* Initialize the event */
     k_event_init(&s_obj.smf_event);
@@ -472,6 +547,8 @@ void main(void)
 		}
 		k_sleep(K_SECONDS(smf_sleep_sec));
 	}
+end:
+	return 0;
 }
 
 void coap_init(void)

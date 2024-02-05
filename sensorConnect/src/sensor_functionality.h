@@ -4,18 +4,9 @@
 
 #include "sensirion_i2c_hal.h"
 
-/* FOR STATE MACHINES
+#define TEXTBUFFER_SIZE 256
+#define CO2_TARGET_VALUE 400;
 
-typedef enum{
-    SLEEP,
-	SENSOR_INIT,
-	PERIODIC_MEASURING,   
-} sensor_state;
-
-static sensor_state s_state = SLEEP;
-
-*/
-/* for now, data is stored like this, will be omitted later*/
 static uint16_t SCD41_co2;
 static int32_t SCD41_temperature;
 static int32_t SCD41_humidity;
@@ -41,7 +32,9 @@ void read_measurement();
 
 void print_measurement();
 
-char* create_coap_message(struct k_heap* heap, int16_t *ret);
+char *create_coap_message();
+
+char* create_coap_message_with_k_heap_alloc(struct k_heap* heap, int16_t *ret);
 
 void forced_co2_recalibration(int16_t *error);
 
