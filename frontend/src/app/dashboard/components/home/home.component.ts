@@ -76,9 +76,9 @@ export class HomeComponent implements OnInit {
     for (let i = 0; i < src.valueMeasures.length; i++) {
       if (src.valueMeasures[i].type.toLowerCase().includes('temp') || src.valueMeasures[i].type.toLowerCase().includes('hum')) {
         src.valueMeasures[i].value = Math.round(src.valueMeasures[i].value / 1000);
-      } else if (src.valueMeasures[i].type.toLowerCase().includes('voc')) {
+      } /*else if (src.valueMeasures[i].type.toLowerCase().includes('voc')) {
         src.valueMeasures[i].value = Math.round(src.valueMeasures[i].value / 10);
-      }
+      }*/
       src.valueMeasures[i].value = Math.round(src.valueMeasures[i].value);
     }
     return src;
@@ -121,9 +121,9 @@ export class HomeComponent implements OnInit {
           return Status.Warning
         }
       case 'VOC':
-        if (value >= 0 && value <= 50) {
+        if (value >= 0 && value <= 1000) {
           return Status.Normal;
-        } else if (value < 0 || value > 100) {
+        } else if (value < 0 || value > 1500) {
           return Status.Alert;
         } else {
           return Status.Warning
