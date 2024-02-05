@@ -404,6 +404,7 @@ static void idle_run(void *o){
 				set_blinking_led();
 				new_led_state = false;
 			}
+			break;
 	}
 	
 	smf_sleep_sec = 1;
@@ -444,6 +445,10 @@ static void stop_measurement_run(void *o){
 
 	k_msleep(500);
 	
+	run_calibration = false;
+	run_per_measurement = false;
+	run_frc = false;
+
 	new_led_state = true;
 	smf_sleep_sec = NO_SLEEP_TIME_SEC;
 	smf_set_state(SMF_CTX(&s_obj), &states[IDLE]);
@@ -639,31 +644,33 @@ int main(void)
 			smf_sleep_sec = 10;
 			continue;
 		}
+		if(btn4_pressed && (run_calibration || run_per_measurement|| run_frc)) {
+			smf_set_state(SMF_CTX(&s_obj), &states[STOP_MEASUREMENT]);
+			smf_sleep_sec = NO_SLEEP_TIME_SEC;
+		}
 		if(mode_switch) {
 			switch(station_mode) {
 				case CONFIG_PERIOD: 
 					station_mode = CALIBRATE;
 					smf_sleep_sec = NO_SLEEP_TIME_SEC;
 					smf_set_state(SMF_CTX(&s_obj), &states[IDLE]);
-					new_led_state = true;
 					break;
 
 				case CALIBRATE: 	
 					station_mode = MEASURE;
-					run_frc = false;
 					smf_sleep_sec = NO_SLEEP_TIME_SEC;
-					(run_calibration || run_frc) ? (SMF_CTX(&s_obj), &states[STOP_MEASUREMENT])
-									: (SMF_CTX(&s_obj), &states[IDLE]);
-					new_led_state = true;
+					(run_calibration || run_frc) ? smf_set_state(SMF_CTX(&s_obj), &states[STOP_MEASUREMENT])
+									: smf_set_state(SMF_CTX(&s_obj), &states[IDLE]);
 					break;
 
 				case MEASURE:
 				default:	 		
 					station_mode = CONFIG_PERIOD;
 					smf_sleep_sec = NO_SLEEP_TIME_SEC;
-					run_per_measurement ? (SMF_CTX(&s_obj), &states[STOP_MEASUREMENT])
-										: (SMF_CTX(&s_obj), &states[IDLE]);
+					run_per_measurement ? smf_set_state(SMF_CTX(&s_obj), &states[STOP_MEASUREMENT])
+										: smf_set_state(SMF_CTX(&s_obj), &states[IDLE]);
 					new_led_state = true;
+					break;
 			};
 			mode_switch = false;
 			new_led_state = true;
