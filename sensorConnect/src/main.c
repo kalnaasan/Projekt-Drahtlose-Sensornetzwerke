@@ -481,12 +481,13 @@ static void send_data_run(void *o){
 	char* my_sensor_data;
 	my_sensor_data = create_coap_message();
 	coap_send_data_request(my_sensor_data);
-
-	k_work_submit(&blinking_led_3sec_work);
-
 	free(my_sensor_data);
 
-	smf_sleep_sec = SLEEP_TIME_FIVE;
+	switch(measure_period) {
+		case FIVE: smf_sleep_sec = SLEEP_TIME_FIVE; break;
+		case THIRTY: smf_sleep_sec = SLEEP_TIME_THIRTY; break;
+		case SIXTY: smf_sleep_sec = SLEEP_TIME_SIXTY; break;
+	}
 	smf_set_state(SMF_CTX(&s_obj), &states[READ_MEASUREMENT]);
 }
 

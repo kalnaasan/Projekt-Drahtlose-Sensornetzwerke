@@ -33,7 +33,8 @@ void start_periodic_measurement(int16_t *error)
 	// SCD41
 	switch(measure_period) {
 		case FIVE:		*error = scd4x_start_periodic_measurement(); break;
-		case THIRTY:	*error = scd4x_start_low_power_periodic_measurement(); break;
+		case THIRTY:
+		case SIXTY:		*error = scd4x_start_low_power_periodic_measurement(); break;
 		default:		break; //SITXTY -> single shot in idle mode 
 	}
 	if (*error)
