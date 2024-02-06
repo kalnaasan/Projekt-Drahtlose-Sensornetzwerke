@@ -209,8 +209,8 @@ static bool sleep_interruptable(uint8_t sec, bool is_for_calibration);
 
 
 /* CoAP functionality */
-
-const char *serverIpAddr = "fdda:72bc:8975:2:0:0:10.80.2.239";
+// VM-IP-ADDRESS
+const char *serverIpAddr = "fd56:b1f:f132:2:0:0:10.80.2.239";
 
 void coap_init(void);
 void coap_send_data_response_cb(void *p_context, otMessage *p_message, const otMessageInfo *p_message_info, otError result);
