@@ -9,6 +9,8 @@
 
 #define I2C_NODE		DT_NODELABEL(i2c0)
 
+LOG_MODULE_REGISTER(sensirion_i2c_hal, LOG_LEVEL_INF);
+
 static const struct device *i2c_dev;
 
 /**
@@ -21,7 +23,7 @@ void sensirion_i2c_hal_get(void) {
     i2c_dev = DEVICE_DT_GET(I2C_NODE);
     if (!device_is_ready(i2c_dev)) {
         
-        printk("Initialization of I2C connection failed!\n");
+        LOG_ERR("Initialization of I2C connection failed!");
     }
     return;
 }

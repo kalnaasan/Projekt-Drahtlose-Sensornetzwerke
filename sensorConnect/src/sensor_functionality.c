@@ -5,9 +5,8 @@
 #include "sensirion_i2c_hal.h"
 
 
+LOG_MODULE_REGISTER(sensor_functionality, LOG_LEVEL_INF);
 
-
-/* Sensor functionality */
 void clean_up_sensor_states(int16_t *error)
 {
 	// SCD41
@@ -16,14 +15,14 @@ void clean_up_sensor_states(int16_t *error)
 	*error = scd4x_reinit();
 	if (*error)
 	{
-		printk("Error executing scd4x_reinit(): %i\n", *error);
+		LOG_ERR("Error executing scd4x_reinit(): %i", *error);
 		return;
 	}
 	// SVM41
 	*error = svm41_device_reset();
 	if (*error)
 	{
-		printk("Error executing svm41_device_reset(): %i\n", *error);
+		LOG_ERR("Error executing svm41_device_reset(): %i", *error);
 		return;
 	}
 }
@@ -38,13 +37,13 @@ void start_periodic_measurement(int16_t *error, bool svm41)
 		case THIRTY:	*error = scd4x_start_low_power_periodic_measurement(); break;
 		case SIXTY:		*error = scd4x_stop_periodic_measurement();break; //SITXTY -> single shot in idle mode, measure single shot before reading
 		
-		default:		printk("Error measure_period unkown: %i", measure_period);
+		default:		LOG_ERR("Error measure_period unkown: %i", measure_period);
 						return;
 	}
 
 	if (*error)
 	{
-		printk("Error executing scd4x_[low_power_]start_periodic_measurement(): %i\n", *error);
+		LOG_ERR("Error executing scd4x_[low_power_]start_periodic_measurement(): %i", *error);
 		return;
 	}
 	
@@ -54,7 +53,7 @@ void start_periodic_measurement(int16_t *error, bool svm41)
 		*error = svm41_start_measurement();
 		if (*error)
 		{
-			printk("Error executing svm41_start_measurement(): %i\n", *error);
+			LOG_ERR("Error executing svm41_start_measurement(): %i", *error);
 			return;
 		}
 	}
@@ -63,11 +62,10 @@ void start_periodic_measurement(int16_t *error, bool svm41)
 void perform_single_measurement_scd41(int16_t *error) {
 	*error = 0;
 
-	printk("-> perform_single_measurement_scd41()\n");
 	*error = scd4x_measure_single_shot();
 	if (*error)
 	{
-		printk("Error executing scd4x_measure_single_shot(): %i\n", *error);
+		LOG_ERR("Error executing scd4x_measure_single_shot(): %i", *error);
 	}
 }
 
@@ -77,22 +75,20 @@ void stop_periodic_measurement(int16_t *error)
 	*error = scd4x_stop_periodic_measurement();
 	if (*error)
 	{
-		printk("Error executing scd4x_stop_periodic_measurement(): %i\n", *error);
+		LOG_ERR("Error executing scd4x_stop_periodic_measurement(): %i", *error);
 		return;
 	}
 	// SVM41
 	*error = svm41_stop_measurement();
 	if (*error)
 	{
-		printk("Error executing svm41_stop_measurement(): %i\n", *error);
+		LOG_ERR("Error executing svm41_stop_measurement(): %i", *error);
 		return;
 	}
 }
 
 void read_measurement(int16_t *error)
 {
-	printk("------------------------\n");
-
 	valid_SC41_data = false;
 	valid_SVM41_data = false;
 
@@ -104,67 +100,70 @@ void read_measurement(int16_t *error)
 		*error = scd4x_get_data_ready_flag(&data_ready_flag);
 		if (*error)
 		{
-			printk("Error executing scd4x_get_data_ready_flag(): %i\n", *error);
+			LOG_ERR("Error executing scd4x_get_data_ready_flag(): %i", *error);
 			continue;
 		}
 		if (!data_ready_flag)
 		{
-			printk("SCD41 Data not ready\n");
+			LOG_INF("SCD41 Data not ready\n");
 			continue;
 		}
 		*error = scd4x_read_measurement(&SCD41_co2, &SCD41_temperature, &SCD41_humidity);
 		if (*error)
 		{
-			printk("Error executing scd4x_read_measurement(): %i\n", *error);
+			LOG_ERR("Error executing scd4x_read_measurement(): %i", *error);
 			continue;
 		}
 		else if (SCD41_co2 == 0)
 		{
-			printk("Invalid SCD41 sample detected, skipping this sensor.\n");
+			LOG_INF("Invalid SCD41 sample detected, skipping this sensor.");
 		}
 		else
 		{
 			valid_SC41_data = true;
+			LOG_INF("SCD41 values > CO2: %u (ppm), T: %d (mC), RH: %d (mRH)", SCD41_co2, SCD41_temperature, SCD41_humidity);
 		}
 		// SVM41
 		*error = svm41_read_measured_values_as_integers(&SVM41_humidity, &SVM41_temperature,
 													   &SVM41_voc_index, &SVM41_nox_index);
 		if (*error)
 		{
-			printk("Error executing svm41_read_measured_values_as_integers(): %i\n", *error);
+			LOG_ERR("Error executing svm41_read_measured_values_as_integers(): %i", *error);
 			continue;
 		}
 		else
 		{
 			valid_SVM41_data = true;
+			LOG_INF("SVM41 values > RH: %i (mRH), t: %i (mC), VOC-idx: %i (index * 10), NOx_idx: %i )index * 10)", 
+					SVM41_humidity * 10, (SVM41_temperature >> 1) * 10, SVM41_voc_index, SVM41_nox_index);
 		}
 	} while (false);
 }
 
-void print_measurement()
+void print_measurement_to_console()
 {
 	printk("->Measurements\n");
 	printk("SCD41\n");
 	if (valid_SC41_data)
 	{
 
-		printk("\tCO2: %u\n", SCD41_co2);
-		printk("\tTemperature: %d m°C\n", SCD41_temperature);
+		printk("\tCO2: %uppm\n", SCD41_co2);
+		printk("\tTemperature: %d mC\n", SCD41_temperature);
 		printk("\tHumidity: %d mRH\n", SCD41_humidity);
 	}
 	else
-		(printk("\tNo Valid Data.\n"));
+		(printk("\tNo Valid SCD41 Data.\n"));
 
 	printk("SVM41\n");
 	if (valid_SVM41_data)
 	{
-		printk("\tHumidity: %i milli %% RH\n", SVM41_humidity * 10);
-		printk("\tTemperature: %i milli °C\n", (SVM41_temperature >> 1) * 10);
+		printk("\tHumidity: %i mRH\n", SVM41_humidity * 10);
+		printk("\tTemperature: %i mC\n", (SVM41_temperature >> 1) * 10);
 		printk("\tVOC index: %i (index * 10)\n", SVM41_voc_index);
 		printk("\tNOx index: %i (index * 10)\n", SVM41_nox_index);
 	}
 	else
-		(printk("\tNo Valid Data.\n"));
+		(printk("\tNo Valid SVM41 Data.\n"));
 	printk("\n");
 }
 
@@ -180,11 +179,11 @@ char *create_coap_message()
 
 	if (ret >= 0 && ret < sizeof(jsonBuffer))
 	{
-		printk("JSON Encoded Data: %s\n", jsonBuffer);
+		LOG_ERR("JSON Encoded Data: %s", jsonBuffer);
 	}
 	else
 	{
-		printk("JSON Encoding Failed: %d\n", ret);
+		LOG_INF("JSON Encoding Failed: %d", ret);
 	}
 
 	char *buf = malloc(sizeof(char) * TEXTBUFFER_SIZE);
@@ -203,15 +202,13 @@ void forced_co2_recalibration(int16_t *error) {
 
 	*error = scd4x_perform_forced_recalibration(target_value, &frc_correction);
 	if(*error) {
-		printk("Error executing scd4x_perform_forced_recalibration(): %i\n", *error);
+		LOG_ERR("Error executing scd4x_perform_forced_recalibration(): %i", *error);
 	}
-
-	k_msleep(400);
 
 	if(frc_correction == 0xffff) {
 		*error = frc_correction;
-		printk("Error: FRC Correction failed on SCD41: 0xffff\n");
+		LOG_ERR("Error: FRC Correction failed on SCD41: 0xffff");
 		return;
 	}
-	printk("frc_correction: %i\n", frc_correction);
+	LOG_INF("frc_correction: %i", frc_correction);
 }

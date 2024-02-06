@@ -1,4 +1,3 @@
-#include <zephyr/logging/log.h>
 #include <dk_buttons_and_leds.h>
 #include <zephyr/smf.h>
 #include <zephyr/net/openthread.h>
@@ -20,14 +19,29 @@
 
 #define NO_BLINKING_LED 5
 
-/* Modes for Sensor Station */
+LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
+
+/**
+ * Boolean for printing read sensor values to the console
+ * Change to true to enable
+*/
+static bool print_values_to_console = false;
+
+/**
+ * Modes for the Sensor Station
+ * 
+ * Measure: 		Start/stop periodic measurement
+ * Config_period: 	Change the measurement period of the Sensor Station
+ * Calibrate: 		Start/stop the selected calibration mode (only Co2 available)
+ * 
+*/
 static enum sensor_station_mode { 
 	MEASURE, 
 	CONFIG_PERIOD, 
 	CALIBRATE
 } station_mode;
 
-static const char* station_mode_to_string(enum sensor_station_mode s_mode);
+/* Variables used for managing modes, LEDs, Buttons and States of the SMF */
 static bool mode_switch;
 
 static bool btn2_pressed;
@@ -44,6 +58,11 @@ static uint8_t blinking_led;
 static struct k_work blinking_led_3sec_work;
 static struct k_timer blinking_led_timer;
 
+/* Functions for Handling LEDs */
+
+/**
+ * set_blinking_led() - Sets the selected blinking_led to blinking ON/OFF.
+*/
 static void set_blinking_led() {
 
 	k_timer_stop(&blinking_led_timer);
@@ -84,6 +103,9 @@ static void set_blinking_led() {
 	}
 }
 
+/**
+ * set_select_led() - Sets the selected blinking_led to blinking ON.
+*/
 static void set_select_led() {
 
 	k_timer_stop(&blinking_led_timer);
@@ -123,6 +145,9 @@ static void set_select_led() {
 	dk_set_led_on(blinking_led);
 }
 
+/**
+ * stop_blinking_led() - Sets the selected blinking_led to blinking OFF.
+*/
 static void stop_blinking_led() {
 
 	k_timer_stop(&blinking_led_timer);
@@ -131,33 +156,34 @@ static void stop_blinking_led() {
 
 static void activate_blinking_3_sec(struct k_work *item)
 {
-	//ARG_UNUSED(item);
+	ARG_UNUSED(item);
 
 	set_blinking_led();
-	k_sleep(K_SECONDS(5));
+	k_sleep(K_SECONDS(SLEEP_TIME_FIVE));
 	stop_blinking_led();
 }
 
-
+/* Expiry function of blinking_led_timer */
 static void on_blinking_led_timer_expiry(struct k_timer *timer_id)
 {
 	static uint8_t val = 1;
 
-	//ARG_UNUSED(timer_id);
+	ARG_UNUSED(timer_id);
 
 	dk_set_led(blinking_led, val);
 	val = !val;
 }
 
+/* Stop function of blinking_led_timer */
 static void on_blinking_led_timer_stop(struct k_timer *timer_id)
 {
-	//ARG_UNUSED(timer_id);
+	ARG_UNUSED(timer_id);
 
 	dk_set_led_off(blinking_led);
 }
 
 
-
+/* Button Handler */
 static void on_button_changed(uint32_t button_state, uint32_t has_changed)
 {
 	uint32_t buttons = button_state & has_changed;
@@ -177,23 +203,12 @@ static void on_button_changed(uint32_t button_state, uint32_t has_changed)
 
 }
 
-/**
- * Sleep Interrupt Button Handler for usage of k_sleep()
- * Returns true if interrupted, false otherwise.
-*/
-static bool sleep_interruptable(uint8_t sec) {
+/* Forward declaration of helper function*/
+static const char* station_mode_to_string(enum sensor_station_mode s_mode);
+static bool sleep_interruptable(uint8_t sec, bool is_for_calibration);
 
-	for(uint8_t i = 0; i < sec; i++) {
-		k_sleep(K_SECONDS(1));
-		if(btn4_pressed || mode_switch) {
-			btn4_pressed = false;
-			mode_switch = false;
-			return true;
-		}
-	}
-	return false;
-}
-/* CoAP */
+
+/* CoAP functionality */
 
 const char *serverIpAddr = "fdda:72bc:8975:2:0:0:10.80.2.239";
 
@@ -202,13 +217,14 @@ void coap_send_data_response_cb(void *p_context, otMessage *p_message, const otM
 void coap_send_data_request(char *message);
 
 
-/* SMF */
+/* State Machine Framework */
 
 int32_t smf_sleep_sec = NO_SLEEP_TIME;
 
 /* Forward declaration of state table */
 static const struct smf_state states[];
 
+/* States */
 enum state { 
 	INIT, 
 	IDLE, 
@@ -230,7 +246,7 @@ struct s_object {
 
 /* State INIT */
 static void init_run(void *o){
-	printk("INIT\n");
+	LOG_INF("State: INIT");
 
 	blinking_led = DK_LED1;
 	k_timer_start(&blinking_led_timer, K_MSEC(500), K_MSEC(500));
@@ -257,7 +273,7 @@ static void init_run(void *o){
 	sensirion_i2c_hal_get();
 	clean_up_sensor_states(&(s->error));
 	if(s->error) {
-		printk("Error executing clean_up_sensor_states(): %i\n", s->error);
+		LOG_ERR("Error executing clean_up_sensor_states(): %i", s->error);
 		smf_set_state(SMF_CTX(&s_obj), &states[IDLE]);
 		return;
 	}
@@ -273,31 +289,35 @@ static void init_run(void *o){
 
 
 /* State IDLE */
+static void idle_entry(void *o) {
+	LOG_INF("State: IDLE\tMode: %s", station_mode_to_string(station_mode));
+}
+
 static void idle_run(void *o){
-	printk("IDLE\tMode: %s\n", station_mode_to_string(station_mode));
-	
+
 	struct s_object *s = (struct s_object *)o;
 	s->error = NO_ERROR;
 	
-	/* Change states on Mode-Switch Button Press Event */
 	switch(station_mode) {
+
+		/* Mode CONFIG_PERIOD */
 		case CONFIG_PERIOD:
 			dk_set_led_on(DK_LED2);
 			if(btn2_pressed) {
 				measure_period = FIVE;
-				printk("Period Change to FIVE\n");
+				LOG_INF("measure_period Change: FIVE");
 				new_led_state = true;
 				btn2_pressed = false;
 			}
 			if(btn3_pressed) {
 				measure_period = THIRTY;
-				printk("Period Change to THIRTY\n");
+				LOG_INF("measure_period Change: THIRTY");
 				new_led_state = true;
 				btn3_pressed = false;
 			}
 			if(btn4_pressed) {
 				measure_period = SIXTY;
-				printk("Period Change to SIXTY\n");
+				LOG_INF("measure_period Change: SIXTY");
 				new_led_state = true;
 				btn4_pressed = false;
 			}
@@ -308,6 +328,7 @@ static void idle_run(void *o){
 			}
 			break;
 
+		/* Mode CALIBRATE */
 		case CALIBRATE:
 			dk_set_led_on(DK_LED3);
 			if(btn2_pressed) {
@@ -319,12 +340,12 @@ static void idle_run(void *o){
 					return;
 				}
 				else if(calib_mode == CO2) {
-					printk("-> selected CO2\n");
+					LOG_INF("User Select CO2 Calibration");
 					run_calibration = true;
 					set_select_led();
 				}
 				else {
-					printk("Change Calib to CO2\n");
+					LOG_INF("calib_mode Change: CO2");
 					calib_mode = CO2;
 					run_calibration = false;
 					new_led_state = true;
@@ -340,12 +361,12 @@ static void idle_run(void *o){
 					return;
 				}
 				else if(calib_mode == VOC) {
-					printk("-> selected VOC\n");
+					LOG_INF("User Select VOC Calibration");
 					run_calibration = true;
 					set_select_led();
 				}
 				else {
-					printk("Change Calib to VOC\n");
+					LOG_INF("calib_mode Change: VOC");
 					calib_mode = VOC;
 					run_calibration = false;
 					new_led_state = true;
@@ -361,13 +382,13 @@ static void idle_run(void *o){
 					return;
 				}
 				else if(calib_mode == TEMP) {
-					printk("-> selected TEMP\n");
+					LOG_INF("User Select TEMP Calibration");
 					run_calibration = true;
 					set_select_led();
 				
 				}
 				else {
-					printk("Change Calib to TEMP\n");
+					LOG_INF("calib_mode Change: TEMP");
 					calib_mode = TEMP;
 					run_calibration = false;
 					new_led_state = true;
@@ -381,6 +402,8 @@ static void idle_run(void *o){
 			}
 			break;
 
+
+		/* Mode MEASURE */
 		case MEASURE:
 		default:
 			dk_set_led_on(DK_LED1); 		
@@ -392,6 +415,7 @@ static void idle_run(void *o){
 					return;
 				}
 				else {
+					LOG_INF("User Select Start Measurement");
 					run_per_measurement = true;
 					set_select_led(blinking_led);
 				}
@@ -423,7 +447,7 @@ static void idle_run(void *o){
 
 /* State START_MEASUREMENT */
 static void start_measurement_run(void *o){
-	printk("START_MEASUREMENT\tmeasure_period: %s\n", measure_period_to_string(measure_period));
+	LOG_INF("State: START_MEASUREMENT\tmeasure_period: %s", measure_period_to_string(measure_period));
 
 	struct s_object *s = (struct s_object *)o;
 	s->error = NO_ERROR;
@@ -434,8 +458,12 @@ static void start_measurement_run(void *o){
 	
 	/* Start periodic measurement */
 	start_periodic_measurement(&(s->error), true);
+	if(s->error) {
+		LOG_ERR("Error executing start_periodic_measurement(): %i", s->error);
+		return;
+	}
 
-	if(sleep_interruptable(SLEEP_TIME_TEN)) {
+	if(sleep_interruptable(SLEEP_TIME_TEN, false)) {
 		smf_set_state(SMF_CTX(&s_obj), &states[STOP_MEASUREMENT]);
 		smf_sleep_sec = NO_SLEEP_TIME;
 		return;
@@ -447,7 +475,7 @@ static void start_measurement_run(void *o){
 
 /* State STOP_MEASUREMENT */
 static void stop_measurement_run(void *o){
-	printk("STOP_MEASUREMENT\n");
+	LOG_INF("State: STOP_MEASUREMENT");
 	
 	struct s_object *s = (struct s_object *)o;
 	s->error = NO_ERROR;
@@ -456,6 +484,10 @@ static void stop_measurement_run(void *o){
 
 	/* Stop periodic measurement */
 	stop_periodic_measurement(&(s->error));
+	if(s->error) {
+		LOG_ERR("Error executing stop_periodic_measurement(): %i", s->error);
+		return;
+	}
 
 	dk_set_leds(DK_ALL_LEDS_MSK);
 	
@@ -470,20 +502,33 @@ static void stop_measurement_run(void *o){
 
 /* State READ_MEASUREMENT */
 static void read_measurement_run(void *o){
-	printk("READ_MEASUREMENT\n");
+	LOG_INF("State: READ_MEASUREMENT");
 
 	struct s_object *s = (struct s_object *)o;
 	s->error = NO_ERROR;
 
 	stop_blinking_led();
 
-	/* for SIXTY second period, a single shot is performed */
+	/* for measure_period = SIXTY, a single shot is performed */
 	if(measure_period == SIXTY) {
 		perform_single_measurement_scd41(&(s->error));
+		if(s->error) {
+			LOG_ERR("Error executing perform_single_measurement_scd41(): %i", s->error);
+			//return;
+		}
 	}
+
 	/* Read the Measurement */
 	read_measurement(&(s->error));
-	print_measurement();
+	if(s->error) {
+		LOG_ERR("Error executing read_measurement(): %i", s->error);
+		//return;
+	}
+
+	/* Invoke console print if print_values_to_console is enabled */
+	if(print_values_to_console) {
+		print_measurement_to_console();
+	}
 
 	smf_sleep_sec = NO_SLEEP_TIME;
 	smf_set_state(SMF_CTX(&s_obj), &states[SEND_DATA]);
@@ -491,34 +536,40 @@ static void read_measurement_run(void *o){
 
 /* State SEND_DATA */
 static void send_data_run(void *o){
-	printk("SEND_DATA\n");
+	LOG_INF("State: SEND_DATA");
 
 	struct s_object *s = (struct s_object *)o;
 	s->error = NO_ERROR;
 	
-	// Use shared_data for CoAP communication
+	// Use shared data for CoAP communication
 	char* my_sensor_data;
 	my_sensor_data = create_coap_message();
 	coap_send_data_request(my_sensor_data);
 	free(my_sensor_data);
 
+	/** 
+	 * Station sleeps for measure_period for another read/send-cycle to start.
+	 * If the stop button (Button 4) or the Button for changing the
+	 * Sensor Station mode (Button 1) is pressed while sleeping, stop measuring and
+	 * return to idle.
+	*/
 	switch(measure_period) {
 		case FIVE: 
-			if(sleep_interruptable(SLEEP_TIME_FIVE)) {
+			if(sleep_interruptable(SLEEP_TIME_FIVE, false)) {
 				smf_set_state(SMF_CTX(&s_obj), &states[STOP_MEASUREMENT]);
 				smf_sleep_sec = NO_SLEEP_TIME;
 				return;
 			}
 			break;
 		case THIRTY:
-			if(sleep_interruptable(SLEEP_TIME_THIRTY)) {
+			if(sleep_interruptable(SLEEP_TIME_THIRTY, false)) {
 				smf_set_state(SMF_CTX(&s_obj), &states[STOP_MEASUREMENT]);
 				smf_sleep_sec = NO_SLEEP_TIME;
 				return;
 			}
 			break;
 		case SIXTY:
-			if(sleep_interruptable(SLEEP_TIME_SIXTY)) {
+			if(sleep_interruptable(SLEEP_TIME_SIXTY, false)) {
 				smf_set_state(SMF_CTX(&s_obj), &states[STOP_MEASUREMENT]);
 				smf_sleep_sec = NO_SLEEP_TIME;
 				return;
@@ -531,30 +582,40 @@ static void send_data_run(void *o){
 
 /* State START_CALIB_MEASUREMENT */
 static void start_calib_measurement_run(void *o){
-	
-	printk("START_CALIB_MEASUREMEN, calib_mode: %s, measure_period: %s\n", calib_mode_to_string(calib_mode), measure_period_to_string(measure_period));
+	LOG_INF("State: START_CALIB_MEASUREMEN, calib_mode: %s, measure_period: %s", calib_mode_to_string(calib_mode), measure_period_to_string(measure_period));
 	struct s_object *s = (struct s_object *)o;
 	s->error = NO_ERROR;
 
 	set_select_led();
+
 	switch(calib_mode) {
 		case CO2:
-			/* measure CO2 for 3 Minutes */
+			/* measure CO2 for 3 Minutes, interruptable with Button 1 (change mode) or 4 (stop) */
 			start_periodic_measurement(&(s->error), false);
-			if(s->error) return;
+			if(s->error) {
+				LOG_ERR("Error executing start_periodic_measurement(): %i", s->error);
+				return;
+			}
 
-			if(sleep_interruptable(SLEEP_TIME_THREE_MIN)) {
+			if(sleep_interruptable(SLEEP_TIME_THREE_MIN, true)) {
 				smf_set_state(SMF_CTX(&s_obj), &states[STOP_MEASUREMENT]);
 				smf_sleep_sec = NO_SLEEP_TIME;
 				return;
 			}
+
 			stop_periodic_measurement(&(s->error));
+			if(s->error) {
+				LOG_ERR("Error executing start_periodic_measurement(): %i", s->error);
+				return;
+			}
 			stop_blinking_led();
 			smf_sleep_sec = SLEEP_TIME_ONE;
 			break;
 		case VOC:
+			/* Not implemented, thus disabled */
 			break;
 		case TEMP:
+			/* Not implemented, thus disabled */
 			break;
 	}
 	
@@ -564,14 +625,13 @@ static void start_calib_measurement_run(void *o){
 
 /* State CALIB_READY */
 static void calib_ready_run(void *o){
-	printk("CALIB_READY\n");
+	LOG_INF("State: CALIB_READY");
 
 	struct s_object *s = (struct s_object *)o;
 	s->error = NO_ERROR;
 	set_blinking_led();
 	switch(calib_mode) {
 		case CO2:
-			// LED shows calib_ready
 			if(btn2_pressed) {
 				if(run_frc) {
 					smf_set_state(SMF_CTX(&s_obj), &states[FRC]);
@@ -585,9 +645,11 @@ static void calib_ready_run(void *o){
 			}
 			break;
 		case VOC:
+			/* Not implemented, thus disabled */
 			break;
 		case TEMP:
 		default:
+			/* Not implemented, thus disabled */
 	}
 	
 	smf_sleep_sec = NO_SLEEP_TIME;
@@ -596,7 +658,7 @@ static void calib_ready_run(void *o){
 
 /* State FRC */
 static void frc_run(void *o){
-	printk("FRC\n");
+	LOG_INF("State: FRC");
 	
 	struct s_object *s = (struct s_object *)o;
 	s->error = NO_ERROR;
@@ -607,9 +669,11 @@ static void frc_run(void *o){
 			forced_co2_recalibration(&(s->error));
 			break;
 		case VOC:
+			/* Not implemented, thus disabled */
 			break;
 		case TEMP:
 		default:
+			/* Not implemented, thus disabled */
 	}
 	
 	smf_sleep_sec = SLEEP_TIME_ONE;
@@ -618,10 +682,10 @@ static void frc_run(void *o){
 	smf_set_state(SMF_CTX(&s_obj), &states[IDLE]);
 }
 
-/* Populate state table */
+/* Populate SMF state table */
 static const struct smf_state states[] = {
 	[INIT] = SMF_CREATE_STATE(NULL, init_run, NULL),
-	[IDLE] = SMF_CREATE_STATE(NULL, idle_run, NULL),
+	[IDLE] = SMF_CREATE_STATE(idle_entry, idle_run, NULL),
 	[START_MEASUREMENT] = SMF_CREATE_STATE(NULL, start_measurement_run, NULL),
 	[STOP_MEASUREMENT] = SMF_CREATE_STATE(NULL, stop_measurement_run, NULL),
 	[READ_MEASUREMENT] = SMF_CREATE_STATE(NULL, read_measurement_run, NULL),
@@ -631,46 +695,62 @@ static const struct smf_state states[] = {
 	[FRC] = SMF_CREATE_STATE(NULL, frc_run, NULL)
 };
 
-
+/* main function */
 int main(void)
 {
 	int32_t ret;
 
+	/* Initialize timers on work queue for LEDs */
 	k_timer_init(&blinking_led_timer, on_blinking_led_timer_expiry, on_blinking_led_timer_stop);
-	
 	k_work_init(&blinking_led_3sec_work, activate_blinking_3_sec);
 
+	/* Initialize LEDs and Buttons */
 	ret = dk_leds_init();
 	if (ret) {
-		//LOG_ERR("Could not initialize leds, err code: %d", ret);
+		LOG_ERR("Could not initialize leds, err code: %d", ret);
 		goto end;
 	}
 
 	ret = dk_buttons_init(on_button_changed);
 	if (ret) {
-		//LOG_ERR("Cannot init buttons (error: %d)", ret);
+		LOG_ERR("Cannot init buttons (error: %d)", ret);
 		goto end;
 	}
 
-	/* Set init state */
+	/* Set init SMF state */
 	smf_set_initial(SMF_CTX(&s_obj), &states[INIT]);
 	
+
 	while (1) {
+		/* run selected SMF state */
 		ret = smf_run_state(SMF_CTX(&s_obj));
 		if(ret) {
-			printk("SMF Run State Error: %d\n", ret);
+			LOG_ERR("SMF Run State Error: %d", ret);
 			smf_set_initial(SMF_CTX(&s_obj), &states[INIT]);
 			smf_sleep_sec = SLEEP_TIME_ONE;
 			continue;
 		}
+
+		/* End Application if an error occured during a state*/
 		if(s_obj.error) {
-			// Error while running state;
+			LOG_ERR("Error Inside Run State: %d", ret);
+			smf_set_state(SMF_CTX(&s_obj), &states[STOP_MEASUREMENT]);
+			ret = smf_run_state(SMF_CTX(&s_obj));
+			if(ret) {
+				LOG_ERR("SMF Run State Error: %d", ret);
+			}
+			goto end;
 		}
+		
+		/* Stop, if the stop button (Button 4) is pressed while Sensor Station is running not in idle mode*/
 		if(btn4_pressed && (run_calibration || run_per_measurement|| run_frc)) {
 			smf_set_state(SMF_CTX(&s_obj), &states[STOP_MEASUREMENT]);
+			ret = smf_run_state(SMF_CTX(&s_obj));
 			smf_sleep_sec = NO_SLEEP_TIME;
 			btn4_pressed = false;
 		}
+
+		/* Change Mode if Button 1 is pressed */
 		if(mode_switch) {
 			switch(station_mode) {
 				case CONFIG_PERIOD: 
@@ -698,34 +778,92 @@ int main(void)
 			mode_switch = false;
 			new_led_state = true;
 		}
+
 		k_sleep(K_SECONDS(smf_sleep_sec));
 	}
 end:
 	return 0;
 }
 
+/**
+ * sleep_interruptable() - Helper method for interruptable sleep of a  SMF state
+ * 
+ * This method lets a SMF state sleeping, while checking every second, if
+ * Button 1 or 4 have been pressed. If so, it stops the waiting time.
+ * 
+ * @param sec seconds for the SMF state to sleep
+ * @param is_for_calibration when set true and the measure_period is SIXTY, the function
+ * performs a single shot measurement every 60 seconds.
+ * @returns false, if no interrupt happened, true otherwise.
+*/
+static bool sleep_interruptable(uint8_t sec, bool is_for_calibration) {
+
+	for(uint8_t i = 0; i < sec; i++) {
+		k_sleep(K_SECONDS(1));
+		if(is_for_calibration && measure_period == SIXTY && i % 60 == 0) {
+			/* for SIXTY second period, a single shot is performed */
+			perform_single_measurement_scd41(&s_obj.error);
+			if(s_obj.error) {
+				LOG_ERR("Error executing perform_single_measurement_scd41(): %i", s_obj.error);
+				//return;
+			}
+		}
+	
+		if(btn4_pressed || mode_switch) {
+			btn4_pressed = false;
+			mode_switch = false;
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * station_mode_to_string() - Helper function to change the enum sensor_station_mode to a string.
+ * 
+ * @param s_mode the current mode of the Sensor Station
+ * @returns the String representation of the enum
+*/
+static const char* station_mode_to_string(enum sensor_station_mode s_mode) {
+    switch (s_mode) {
+        case MEASURE:
+            return "MEASURE";
+        case CONFIG_PERIOD:
+            return "CONFIG_PERIOD";
+        case CALIBRATE:
+            return "CALIBRATE";
+        default:
+            return "Unknown";
+    }
+}
+
+/* CoAP functions */
+
+/* Initializes the CoAP functionality */
 void coap_init(void)
 {
 	otInstance *p_instance = openthread_get_default_instance();
 	otError error = otCoapStart(p_instance, OT_DEFAULT_COAP_PORT);
 	if (error != OT_ERROR_NONE)
 	{
-		printk("Failed to start Coap: %d\n", error);
+		LOG_ERR("Failed to start Coap: %d", error);
 	}
 }
 
+/* Callback function for CoAP Server response handling */
 void coap_send_data_response_cb(void *p_context, otMessage *p_message, const otMessageInfo *p_message_info, otError result)
 {
 	if (result == OT_ERROR_NONE)
 	{
-		printk("Delivery confirmed.\n");
+		LOG_INF("Delivery confirmed.");
 	}
 	else
 	{
-		printk("Delivery not confirmed: %d\n", result);
+		LOG_ERR("Delivery not confirmed: %d", result);
 	}
 }
 
+/* Sends a message to the CoAP Server */
 void coap_send_data_request(char *message)
 {
 	otError error = OT_ERROR_NONE;
@@ -741,7 +879,7 @@ void coap_send_data_request(char *message)
 		myMessage = otCoapNewMessage(myInstance, NULL);
 		if (myMessage == NULL)
 		{
-			printk("Failed to allocate message for CoAP Request\n");
+			LOG_ERR("Failed to allocate message for CoAP Request");
 			return;
 		}
 		otCoapMessageInit(myMessage, OT_COAP_TYPE_CONFIRMABLE, OT_COAP_CODE_PUT);
@@ -775,24 +913,13 @@ void coap_send_data_request(char *message)
 
 	if (error != OT_ERROR_NONE)
 	{
-		printk("Failed to send CoAP Request: %d\n", error);
+		LOG_ERR("Failed to send CoAP Request: %d", error);
 		otMessageFree(myMessage);
 	}
 	else
 	{
-		printk("CoAP data send.\n");
+		LOG_INF("CoAP data send.");
 	}
 }
 
-static const char* station_mode_to_string(enum sensor_station_mode s_mode) {
-    switch (s_mode) {
-        case MEASURE:
-            return "MEASURE";
-        case CONFIG_PERIOD:
-            return "CONFIG_PERIOD";
-        case CALIBRATE:
-            return "CALIBRATE";
-        default:
-            return "Unknown";
-    }
-}
+
