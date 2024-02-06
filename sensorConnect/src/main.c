@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
  * Boolean for printing read sensor values to the console
  * Change to true to enable
 */
-static bool print_values_to_console = false;
+static bool print_values_to_console = true;
 
 /**
  * Modes for the Sensor Station
