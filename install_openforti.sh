@@ -10,8 +10,12 @@ fi
 if ! command -v openfortivpn &> /dev/null; then
     echo "OpenFortiVPN ist nicht installiert. Installiere es jetzt..."
     apt-get update
-    apt-get install -y openfortivpn
+    apt-get install -y openfortivpn tcpdump
 fi
+
+# Add CA
+cp geant_ov_rsa_ca.crt /usr/local/share/ca-certificates/
+update-ca-certificates
 
 # Benutzer nach VPN-Konfigurationsdetails fragen
 read -p "Gib den VPN-Host ein: " vpn_host
