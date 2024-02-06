@@ -1,6 +1,9 @@
 / {
 	chosen {
 		zephyr,entropy = &rng;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
 	};
 };
 &adc {
