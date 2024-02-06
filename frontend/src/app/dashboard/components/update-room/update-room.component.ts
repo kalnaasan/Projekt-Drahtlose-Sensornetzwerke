@@ -16,7 +16,6 @@ export class UpdateRoomComponent implements OnInit {
 
   public roomForm!: FormGroup;
   public sensors: Sensor[] = [];
-  public selectedSensors: Sensor[] = [];
   public sensorDropdownSettings: any = {};
   public room!: Room;
 
@@ -35,6 +34,7 @@ export class UpdateRoomComponent implements OnInit {
             sensor: [this.room.sensors, [Validators.required]],
             roomName: [this.room.name, [Validators.required]]
           });
+          this.loadAvailableSensors();
         },
         error: (err: any) => console.log(err)
       })
@@ -53,19 +53,17 @@ export class UpdateRoomComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadAvailableSensors();
+
   }
 
   loadAvailableSensors(): void {
-    this.sensorService.getAllSensors().subscribe(
-      (res: any) => {
-        this.sensors = res.data;
-        console.log(this.sensors);
-        console.log(this.room);
-        this.sensors = this.sensors.concat(this.room.sensors);
-        console.log(this.sensors);
-      },
-      (err: any) => console.log(err.error)
+    this.sensorService.getAllSensors().subscribe({
+        next: (res: any) => {
+          this.sensors = res.data;
+          this.sensors = this.sensors.concat(this.room.sensors);
+        },
+        error: (err: any) => console.log(err.error)
+      }
     );
   }
 
@@ -90,15 +88,15 @@ export class UpdateRoomComponent implements OnInit {
         name: roomName,
         sensors: selectedSensors
       }
-      this.roomService.updateRoom(this.room.id, room).subscribe(
-        (res: any) => {
+      this.roomService.updateRoom(this.room.id, room).subscribe({
+        next: (res: any) => {
           console.log(res.message);
           this.roomForm.get('roomName')?.setValue("");
           this.roomForm.get('sensor')?.setValue([]);
 
            document.location.href = '/rooms/' + this.room.id;
         },
-        (err: any) => console.log(err.error)
+        error: (err: any) => console.log(err.error)}
       );// Close the dialog after successful submission
 
       this.isDialogVisible = false;
