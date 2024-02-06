@@ -150,6 +150,16 @@ export class PlanComponent implements AfterViewInit, OnInit {
           start: [item.start, Validators.required],
           room: [item.room, Validators.required]
         });
+        this.rooms.push(item.room);
+        this.rooms.sort((a, b) => {
+          if (a.name < b.name) {
+            return -1;
+          } else if (a.name > b.name) {
+            return 1;
+          } else {
+            return 0;
+          }
+        });
         this.elements.push(elementFrom);
         this.addElementToSVG(this.elements.length - 1);
       }
