@@ -634,7 +634,7 @@ static void start_calib_measurement_run(void *o){
 /* State CALIB_READY */
 static void calib_ready_run(void *o){
 	if(show_idle_state){
-		("State: CALIB_READY\n");
+		printk("State: CALIB_READY\n");
 		show_idle_state = false;
 	}
 
