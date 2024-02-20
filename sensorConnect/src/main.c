@@ -246,7 +246,7 @@ struct s_object {
 
 /* State INIT */
 static void init_run(void *o){
-	LOG_INF("State: INIT");
+	printk("State: INIT\n");
 
 	blinking_led = DK_LED1;
 	k_timer_start(&blinking_led_timer, K_MSEC(500), K_MSEC(500));
@@ -273,7 +273,7 @@ static void init_run(void *o){
 	sensirion_i2c_hal_get();
 	clean_up_sensor_states(&(s->error));
 	if(s->error) {
-		LOG_ERR("Error executing clean_up_sensor_states(): %i", s->error);
+		printk("Error executing clean_up_sensor_states(): %i\n", s->error);
 		smf_set_state(SMF_CTX(&s_obj), &states[IDLE]);
 		return;
 	}
@@ -290,7 +290,7 @@ static void init_run(void *o){
 
 /* State IDLE */
 static void idle_entry(void *o) {
-	LOG_INF("State: IDLE\tMode: %s", station_mode_to_string(station_mode));
+	printk("State: IDLE\tMode: %s\n", station_mode_to_string(station_mode));
 }
 
 static void idle_run(void *o){
@@ -305,19 +305,19 @@ static void idle_run(void *o){
 			dk_set_led_on(DK_LED2);
 			if(btn2_pressed) {
 				measure_period = FIVE;
-				LOG_INF("measure_period Change: FIVE");
+				printk("measure_period Change: FIVE\n");
 				new_led_state = true;
 				btn2_pressed = false;
 			}
 			if(btn3_pressed) {
 				measure_period = THIRTY;
-				LOG_INF("measure_period Change: THIRTY");
+				printk("measure_period Change: THIRTY\n");
 				new_led_state = true;
 				btn3_pressed = false;
 			}
 			if(btn4_pressed) {
 				measure_period = SIXTY;
-				LOG_INF("measure_period Change: SIXTY");
+				printk("measure_period Change: SIXTY\n");
 				new_led_state = true;
 				btn4_pressed = false;
 			}
@@ -340,12 +340,12 @@ static void idle_run(void *o){
 					return;
 				}
 				else if(calib_mode == CO2) {
-					LOG_INF("User Select CO2 Calibration");
+					printk("User Select CO2 Calibration\n");
 					run_calibration = true;
 					set_select_led();
 				}
 				else {
-					LOG_INF("calib_mode Change: CO2");
+					printk("calib_mode Change: CO2\n");
 					calib_mode = CO2;
 					run_calibration = false;
 					new_led_state = true;
@@ -361,12 +361,12 @@ static void idle_run(void *o){
 					return;
 				}
 				else if(calib_mode == VOC) {
-					LOG_INF("User Select VOC Calibration");
+					printk("User Select VOC Calibration\n");
 					run_calibration = true;
 					set_select_led();
 				}
 				else {
-					LOG_INF("calib_mode Change: VOC");
+					printk("calib_mode Change: VOC\n");
 					calib_mode = VOC;
 					run_calibration = false;
 					new_led_state = true;
@@ -382,13 +382,13 @@ static void idle_run(void *o){
 					return;
 				}
 				else if(calib_mode == TEMP) {
-					LOG_INF("User Select TEMP Calibration");
+					printk("User Select TEMP Calibration\n");
 					run_calibration = true;
 					set_select_led();
 				
 				}
 				else {
-					LOG_INF("calib_mode Change: TEMP");
+					printk("calib_mode Change: TEMP\n");
 					calib_mode = TEMP;
 					run_calibration = false;
 					new_led_state = true;
@@ -415,7 +415,7 @@ static void idle_run(void *o){
 					return;
 				}
 				else {
-					LOG_INF("User Select Start Measurement");
+					printk("User Select Start Measurement\n");
 					run_per_measurement = true;
 					set_select_led(blinking_led);
 				}
@@ -447,7 +447,7 @@ static void idle_run(void *o){
 
 /* State START_MEASUREMENT */
 static void start_measurement_run(void *o){
-	LOG_INF("State: START_MEASUREMENT\tmeasure_period: %s", measure_period_to_string(measure_period));
+	printk("State: START_MEASUREMENT\tmeasure_period: %s\n", measure_period_to_string(measure_period));
 
 	struct s_object *s = (struct s_object *)o;
 	s->error = NO_ERROR;
@@ -459,7 +459,7 @@ static void start_measurement_run(void *o){
 	/* Start periodic measurement */
 	start_periodic_measurement(&(s->error), true);
 	if(s->error) {
-		LOG_ERR("Error executing start_periodic_measurement(): %i", s->error);
+		printk("Error executing start_periodic_measurement()\n: %i", s->error);
 		return;
 	}
 
@@ -475,7 +475,7 @@ static void start_measurement_run(void *o){
 
 /* State STOP_MEASUREMENT */
 static void stop_measurement_run(void *o){
-	LOG_INF("State: STOP_MEASUREMENT");
+	printk("State: STOP_MEASUREMENT\n");
 	
 	struct s_object *s = (struct s_object *)o;
 	s->error = NO_ERROR;
@@ -485,7 +485,7 @@ static void stop_measurement_run(void *o){
 	/* Stop periodic measurement */
 	stop_periodic_measurement(&(s->error));
 	if(s->error) {
-		LOG_ERR("Error executing stop_periodic_measurement(): %i", s->error);
+		printk("Error executing stop_periodic_measurement(): %i\n", s->error);
 		return;
 	}
 
@@ -502,7 +502,7 @@ static void stop_measurement_run(void *o){
 
 /* State READ_MEASUREMENT */
 static void read_measurement_run(void *o){
-	LOG_INF("State: READ_MEASUREMENT");
+	printk("State: READ_MEASUREMENT\n");
 
 	struct s_object *s = (struct s_object *)o;
 	s->error = NO_ERROR;
@@ -513,7 +513,7 @@ static void read_measurement_run(void *o){
 	if(measure_period == SIXTY) {
 		perform_single_measurement_scd41(&(s->error));
 		if(s->error) {
-			LOG_ERR("Error executing perform_single_measurement_scd41(): %i", s->error);
+			printk("Error executing perform_single_measurement_scd41(): %i\n", s->error);
 			//return;
 		}
 	}
@@ -521,7 +521,7 @@ static void read_measurement_run(void *o){
 	/* Read the Measurement */
 	read_measurement(&(s->error));
 	if(s->error) {
-		LOG_ERR("Error executing read_measurement(): %i", s->error);
+		printk("Error executing read_measurement(): %i\n", s->error);
 		//return;
 	}
 
@@ -536,7 +536,7 @@ static void read_measurement_run(void *o){
 
 /* State SEND_DATA */
 static void send_data_run(void *o){
-	LOG_INF("State: SEND_DATA");
+	printk("State: SEND_DATA\n");
 
 	struct s_object *s = (struct s_object *)o;
 	s->error = NO_ERROR;
@@ -582,7 +582,7 @@ static void send_data_run(void *o){
 
 /* State START_CALIB_MEASUREMENT */
 static void start_calib_measurement_run(void *o){
-	LOG_INF("State: START_CALIB_MEASUREMEN, calib_mode: %s, measure_period: %s", calib_mode_to_string(calib_mode), measure_period_to_string(measure_period));
+	printk("State: START_CALIB_MEASUREMEN, calib_mode: %s, measure_period: %s\n", calib_mode_to_string(calib_mode), measure_period_to_string(measure_period));
 	struct s_object *s = (struct s_object *)o;
 	s->error = NO_ERROR;
 
@@ -593,7 +593,7 @@ static void start_calib_measurement_run(void *o){
 			/* measure CO2 for 3 Minutes, interruptable with Button 1 (change mode) or 4 (stop) */
 			start_periodic_measurement(&(s->error), false);
 			if(s->error) {
-				LOG_ERR("Error executing start_periodic_measurement(): %i", s->error);
+				printk("Error executing start_periodic_measurement(): %i\n", s->error);
 				return;
 			}
 
@@ -605,7 +605,7 @@ static void start_calib_measurement_run(void *o){
 
 			stop_periodic_measurement(&(s->error));
 			if(s->error) {
-				LOG_ERR("Error executing start_periodic_measurement(): %i", s->error);
+				printk("Error executing start_periodic_measurement(): %i\n", s->error);
 				return;
 			}
 			stop_blinking_led();
@@ -625,7 +625,7 @@ static void start_calib_measurement_run(void *o){
 
 /* State CALIB_READY */
 static void calib_ready_run(void *o){
-	LOG_INF("State: CALIB_READY");
+	printk("State: CALIB_READY\n");
 
 	struct s_object *s = (struct s_object *)o;
 	s->error = NO_ERROR;
@@ -658,7 +658,7 @@ static void calib_ready_run(void *o){
 
 /* State FRC */
 static void frc_run(void *o){
-	LOG_INF("State: FRC");
+	printk("State: FRC\n");
 	
 	struct s_object *s = (struct s_object *)o;
 	s->error = NO_ERROR;
@@ -707,13 +707,13 @@ int main(void)
 	/* Initialize LEDs and Buttons */
 	ret = dk_leds_init();
 	if (ret) {
-		LOG_ERR("Could not initialize leds, err code: %d", ret);
+		printk("Could not initialize leds, err code: %d\n", ret);
 		goto end;
 	}
 
 	ret = dk_buttons_init(on_button_changed);
 	if (ret) {
-		LOG_ERR("Cannot init buttons (error: %d)", ret);
+		printk("Cannot init buttons (error: %d)\n", ret);
 		goto end;
 	}
 
@@ -725,7 +725,7 @@ int main(void)
 		/* run selected SMF state */
 		ret = smf_run_state(SMF_CTX(&s_obj));
 		if(ret) {
-			LOG_ERR("SMF Run State Error: %d", ret);
+			printk("SMF Run State Error: %d\n", ret);
 			smf_set_initial(SMF_CTX(&s_obj), &states[INIT]);
 			smf_sleep_sec = SLEEP_TIME_ONE;
 			continue;
@@ -733,11 +733,11 @@ int main(void)
 
 		/* End Application if an error occured during a state*/
 		if(s_obj.error) {
-			LOG_ERR("Error Inside Run State: %d", ret);
+			printk("Error Inside Run State: %d\n", ret);
 			smf_set_state(SMF_CTX(&s_obj), &states[STOP_MEASUREMENT]);
 			ret = smf_run_state(SMF_CTX(&s_obj));
 			if(ret) {
-				LOG_ERR("SMF Run State Error: %d", ret);
+				printk("SMF Run State Error: %d\n", ret);
 			}
 			goto end;
 		}
@@ -804,7 +804,7 @@ static bool sleep_interruptable(uint8_t sec, bool is_for_calibration) {
 			/* for SIXTY second period, a single shot is performed */
 			perform_single_measurement_scd41(&s_obj.error);
 			if(s_obj.error) {
-				LOG_ERR("Error executing perform_single_measurement_scd41(): %i", s_obj.error);
+				printk("Error executing perform_single_measurement_scd41(): %i\n", s_obj.error);
 				//return;
 			}
 		}
@@ -846,7 +846,7 @@ void coap_init(void)
 	otError error = otCoapStart(p_instance, OT_DEFAULT_COAP_PORT);
 	if (error != OT_ERROR_NONE)
 	{
-		LOG_ERR("Failed to start Coap: %d", error);
+		printk("Failed to start Coap: %d\n", error);
 	}
 }
 
@@ -855,11 +855,11 @@ void coap_send_data_response_cb(void *p_context, otMessage *p_message, const otM
 {
 	if (result == OT_ERROR_NONE)
 	{
-		LOG_INF("Delivery confirmed.");
+		printk("CoAP Response: Delivery confirmed.\n");
 	}
 	else
 	{
-		LOG_ERR("Delivery not confirmed: %d", result);
+		printk("CoAP Response: Delivery not confirmed: %d\n", result);
 	}
 }
 
@@ -879,7 +879,7 @@ void coap_send_data_request(char *message)
 		myMessage = otCoapNewMessage(myInstance, NULL);
 		if (myMessage == NULL)
 		{
-			LOG_ERR("Failed to allocate message for CoAP Request");
+			printk("Failed to allocate message for CoAP Request\n");
 			return;
 		}
 		otCoapMessageInit(myMessage, OT_COAP_TYPE_CONFIRMABLE, OT_COAP_CODE_PUT);
@@ -913,12 +913,12 @@ void coap_send_data_request(char *message)
 
 	if (error != OT_ERROR_NONE)
 	{
-		LOG_ERR("Failed to send CoAP Request: %d", error);
+		printk("Failed to send CoAP Request: %d\n", error);
 		otMessageFree(myMessage);
 	}
 	else
 	{
-		LOG_INF("CoAP data send.");
+		printk("CoAP data send.\n");
 	}
 }
 

@@ -23,7 +23,7 @@ void sensirion_i2c_hal_get(void) {
     i2c_dev = DEVICE_DT_GET(I2C_NODE);
     if (!device_is_ready(i2c_dev)) {
         
-        LOG_ERR("Initialization of I2C connection failed!");
+        printk("Initialization of I2C connection failed!\n");
     }
     return;
 }

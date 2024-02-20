@@ -15,14 +15,14 @@ void clean_up_sensor_states(int16_t *error)
 	*error = scd4x_reinit();
 	if (*error)
 	{
-		LOG_ERR("Error executing scd4x_reinit(): %i", *error);
+		printk("Error executing scd4x_reinit(): %i\n", *error);
 		return;
 	}
 	// SVM41
 	*error = svm41_device_reset();
 	if (*error)
 	{
-		LOG_ERR("Error executing svm41_device_reset(): %i", *error);
+		printk("Error executing svm41_device_reset(): %i\n", *error);
 		return;
 	}
 }
@@ -37,13 +37,13 @@ void start_periodic_measurement(int16_t *error, bool svm41)
 		case THIRTY:	*error = scd4x_start_low_power_periodic_measurement(); break;
 		case SIXTY:		*error = scd4x_stop_periodic_measurement();break; //SITXTY -> single shot in idle mode, measure single shot before reading
 		
-		default:		LOG_ERR("Error measure_period unkown: %i", measure_period);
+		default:		printk("Error measure_period unkown: %i\n", measure_period);
 						return;
 	}
 
 	if (*error)
 	{
-		LOG_ERR("Error executing scd4x_[low_power_]start_periodic_measurement(): %i", *error);
+		printk("Error executing scd4x_[low_power_]start_periodic_measurement(): %i\n", *error);
 		return;
 	}
 	
@@ -53,7 +53,7 @@ void start_periodic_measurement(int16_t *error, bool svm41)
 		*error = svm41_start_measurement();
 		if (*error)
 		{
-			LOG_ERR("Error executing svm41_start_measurement(): %i", *error);
+			printk("Error executing svm41_start_measurement(): %i\n", *error);
 			return;
 		}
 	}
@@ -65,7 +65,7 @@ void perform_single_measurement_scd41(int16_t *error) {
 	*error = scd4x_measure_single_shot();
 	if (*error)
 	{
-		LOG_ERR("Error executing scd4x_measure_single_shot(): %i", *error);
+		printk("Error executing scd4x_measure_single_shot(): %i\n", *error);
 	}
 }
 
@@ -75,14 +75,14 @@ void stop_periodic_measurement(int16_t *error)
 	*error = scd4x_stop_periodic_measurement();
 	if (*error)
 	{
-		LOG_ERR("Error executing scd4x_stop_periodic_measurement(): %i", *error);
+		printk("Error executing scd4x_stop_periodic_measurement(): %i\n", *error);
 		return;
 	}
 	// SVM41
 	*error = svm41_stop_measurement();
 	if (*error)
 	{
-		LOG_ERR("Error executing svm41_stop_measurement(): %i", *error);
+		printk("Error executing svm41_stop_measurement(): %i\n", *error);
 		return;
 	}
 }
@@ -100,41 +100,41 @@ void read_measurement(int16_t *error)
 		*error = scd4x_get_data_ready_flag(&data_ready_flag);
 		if (*error)
 		{
-			LOG_ERR("Error executing scd4x_get_data_ready_flag(): %i", *error);
+			printk("Error executing scd4x_get_data_ready_flag(): %i\n", *error);
 			continue;
 		}
 		if (!data_ready_flag)
 		{
-			LOG_INF("SCD41 Data not ready\n");
+			printk("SCD41 Data not ready\n");
 			continue;
 		}
 		*error = scd4x_read_measurement(&SCD41_co2, &SCD41_temperature, &SCD41_humidity);
 		if (*error)
 		{
-			LOG_ERR("Error executing scd4x_read_measurement(): %i", *error);
+			printk("Error executing scd4x_read_measurement(): %i\n", *error);
 			continue;
 		}
 		else if (SCD41_co2 == 0)
 		{
-			LOG_INF("Invalid SCD41 sample detected, skipping this sensor.");
+			printk("Invalid SCD41 sample detected, skipping this sensor.\n");
 		}
 		else
 		{
 			valid_SC41_data = true;
-			LOG_INF("SCD41 values > CO2: %u (ppm), T: %d (mC), RH: %d (mRH)", SCD41_co2, SCD41_temperature, SCD41_humidity);
+			printk("SCD41 values > CO2: %u (ppm), T: %d (mC), RH: %d (mRH)\n", SCD41_co2, SCD41_temperature, SCD41_humidity);
 		}
 		// SVM41
 		*error = svm41_read_measured_values_as_integers(&SVM41_humidity, &SVM41_temperature,
 													   &SVM41_voc_index, &SVM41_nox_index);
 		if (*error)
 		{
-			LOG_ERR("Error executing svm41_read_measured_values_as_integers(): %i", *error);
+			printk("Error executing svm41_read_measured_values_as_integers(): %i\n", *error);
 			continue;
 		}
 		else
 		{
 			valid_SVM41_data = true;
-			LOG_INF("SVM41 values > RH: %i (mRH), t: %i (mC), VOC-idx: %i (index * 10), NOx_idx: %i )index * 10)", 
+			printk("SVM41 values > RH: %i (mRH), t: %i (mC), VOC-idx: %i (index * 10), NOx_idx: %i )index * 10)\n", 
 					SVM41_humidity * 10, (SVM41_temperature >> 1) * 10, SVM41_voc_index, SVM41_nox_index);
 		}
 	} while (false);
@@ -179,11 +179,11 @@ char *create_coap_message()
 
 	if (ret >= 0 && ret < sizeof(jsonBuffer))
 	{
-		LOG_ERR("JSON Encoded Data: %s", jsonBuffer);
+		printk("JSON Encoded Data: %s\n", jsonBuffer);
 	}
 	else
 	{
-		LOG_INF("JSON Encoding Failed: %d", ret);
+		printk("JSON Encoding Failed: %d\n", ret);
 	}
 
 	char *buf = malloc(sizeof(char) * TEXTBUFFER_SIZE);
@@ -202,13 +202,13 @@ void forced_co2_recalibration(int16_t *error) {
 
 	*error = scd4x_perform_forced_recalibration(target_value, &frc_correction);
 	if(*error) {
-		LOG_ERR("Error executing scd4x_perform_forced_recalibration(): %i", *error);
+		printk("Error executing scd4x_perform_forced_recalibration(): %i\n", *error);
 	}
 
 	if(frc_correction == 0xffff) {
 		*error = frc_correction;
-		LOG_ERR("Error: FRC Correction failed on SCD41: 0xffff");
+		printk("Error: FRC Correction failed on SCD41: 0xffff\n");
 		return;
 	}
-	LOG_INF("frc_correction: %i", frc_correction);
+	printk("frc_correction: %i\n", frc_correction);
 }
