@@ -58,6 +58,8 @@ static uint8_t blinking_led;
 static struct k_work blinking_led_3sec_work;
 static struct k_timer blinking_led_timer;
 
+static bool show_idle_state;
+
 /* Functions for Handling LEDs */
 
 /**
@@ -284,13 +286,17 @@ static void init_run(void *o){
 	k_timer_stop(&blinking_led_timer);
 	smf_sleep_sec = SLEEP_TIME_FIVE;
 	new_led_state = true;
+	show_idle_state = true;
 	smf_set_state(SMF_CTX(&s_obj), &states[IDLE]);
 }
 
 
 /* State IDLE */
 static void idle_entry(void *o) {
-	printk("State: IDLE\tMode: %s\n", station_mode_to_string(station_mode));
+	if(show_idle_state) {
+		printk("State: IDLE\tMode: %s\n", station_mode_to_string(station_mode));
+		show_idle_state = false;
+		}
 }
 
 static void idle_run(void *o){
@@ -497,6 +503,8 @@ static void stop_measurement_run(void *o){
 
 	new_led_state = true;
 	smf_sleep_sec = NO_SLEEP_TIME;
+	
+	show_idle_state = true;
 	smf_set_state(SMF_CTX(&s_obj), &states[IDLE]);
 }
 
@@ -619,13 +627,16 @@ static void start_calib_measurement_run(void *o){
 			break;
 	}
 	
-	
+	show_idle_state = true;
 	smf_set_state(SMF_CTX(&s_obj), &states[CALIB_READY]);
 }
 
 /* State CALIB_READY */
 static void calib_ready_run(void *o){
-	printk("State: CALIB_READY\n");
+	if(show_idle_state){
+		("State: CALIB_READY\n");
+		show_idle_state = false;
+	}
 
 	struct s_object *s = (struct s_object *)o;
 	s->error = NO_ERROR;
@@ -679,6 +690,8 @@ static void frc_run(void *o){
 	smf_sleep_sec = SLEEP_TIME_ONE;
 	run_frc = false;
 	new_led_state = true;
+	
+	show_idle_state = true;
 	smf_set_state(SMF_CTX(&s_obj), &states[IDLE]);
 }
 
@@ -777,6 +790,7 @@ int main(void)
 			};
 			mode_switch = false;
 			new_led_state = true;
+			show_idle_state = true;
 		}
 
 		k_sleep(K_SECONDS(smf_sleep_sec));
